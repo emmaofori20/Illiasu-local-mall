@@ -4,10 +4,26 @@ using ILLiasu_Local_Mall.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.RateLimiting;
+using ILLiasu_Local_Mall.Infrastructure.Logging;
+using Serilog;
+
+var setupCommand = args.Any(arg => arg is "--database-provision" or "--seed-identity" or "--provision-admin" or "--seed-catalogue-units");
+Log.Logger = setupCommand ? new LoggerConfiguration().CreateLogger() : ApplicationLogging.Create(Directory.GetCurrentDirectory());
+try
+{
+if (!setupCommand) Log.Information("Diagnostic {DiagnosticEvent}", "ApplicationStarting");
 
 var builder = WebApplication.CreateBuilder(args);
 // CLI output is deliberately sanitized; avoid provider logs dumping SQL diagnostics.
 if (args.Contains("--database-provision")) builder.Logging.ClearProviders();
+if (!setupCommand)
+{
+    var bootstrap = Log.Logger;
+    Log.Logger = ApplicationLogging.Create(builder.Environment.ContentRootPath, builder.Environment.WebRootPath, builder.Configuration["Diagnostics:Directory"]);
+    (bootstrap as IDisposable)?.Dispose();
+    builder.Logging.ClearProviders();
+    builder.Services.AddSerilog(Log.Logger, dispose: false);
+}
 
 // Add services to the container.
 builder.Services.AddControllersWithViews(options =>
@@ -118,6 +134,13 @@ if (args.Contains("--seed-identity") || args.Contains("--provision-admin"))
 }
 
 // Configure the HTTP request pipeline.
+app.Lifetime.ApplicationStarted.Register(() => Log.Information("Diagnostic {DiagnosticEvent} {Environment} {ManagedMemoryMB}",
+    "ApplicationStarted", app.Environment.EnvironmentName, Math.Round(GC.GetTotalMemory(false) / 1048576d, 2)));
+app.Lifetime.ApplicationStopping.Register(() => Log.Information("Diagnostic {DiagnosticEvent} {ManagedMemoryMB}",
+    "ApplicationStopping", Math.Round(GC.GetTotalMemory(false) / 1048576d, 2)));
+app.Lifetime.ApplicationStopped.Register(() => Log.Information("Diagnostic {DiagnosticEvent}", "ApplicationStopped"));
+// Outside the exception handler so one completion describes the final response.
+app.UseMiddleware<RequestOutcomeLogging>();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -144,5 +167,13 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+}
+catch (Exception error)
+{
+    Log.Fatal(error, "Diagnostic {DiagnosticEvent}", "HostFailure");
+    if (setupCommand) Console.Error.WriteLine("Setup command failed; no raw exception details logged.");
+    Environment.ExitCode = 1;
+}
+finally { Log.CloseAndFlush(); }
 
 public partial class Program { }

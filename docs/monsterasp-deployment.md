@@ -5,6 +5,9 @@ modify a production database or enable gated admin functionality.
 
 ## Current application
 
+Production diagnostics and WebFTP verification are documented in
+[production-logging.md](production-logging.md).
+
 - ASP.NET Core MVC, `Microsoft.NET.Sdk.Web`, target `net8.0`; EF Core SQL Server
   and Identity packages are 8.0.31. Publish is framework-dependent and requires
   the host's .NET 8 ASP.NET Core runtime. No framework upgrade is included.

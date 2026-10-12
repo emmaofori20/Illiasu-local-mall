@@ -18,6 +18,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.31" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +29,8 @@
     <Content Remove="wwwroot/lib/bootstrap/**" />
     <!-- These are build inputs; the compiled app.css is the public stylesheet. -->
     <Content Remove="wwwroot/css/tokens.css" />
+    <!-- Runtime diagnostics are never deployment artifacts or public assets. -->
+    <Content Remove="App_Data/**;logs/**" />
   </ItemGroup>
 
   <!-- Publish validates committed production assets without requiring Node/npm. -->
