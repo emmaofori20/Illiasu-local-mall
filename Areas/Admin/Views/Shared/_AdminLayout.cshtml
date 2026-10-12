@@ -1,0 +1,22 @@
+@{ var productPage = ViewData["LiveProducts"] is true; var live = ViewData["LiveCategories"] is true || productPage; var section = productPage ? "Products" : "Categories"; }
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="robots" content="noindex,nofollow" />
+<title>@ViewData["Title"] · ILLiasu Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+</head><body class="admin-body font-sans">
+<a class="skip-link" href="#admin-main">Skip to main content</a>
+<aside class="admin-sidebar"><partial name="_AdminNavigation" /></aside>
+<div class="admin-workspace">
+<header class="admin-topbar"><div class="flex items-center gap-3"><button type="button" class="admin-menu admin-icon-button" id="admin-menu" aria-controls="admin-drawer" aria-expanded="false" aria-label="Open admin navigation">☰</button><span class="text-[12px] text-text-muted">Workspace <span class="mx-2" aria-hidden="true">/</span> <span class="text-text font-medium">@(live ? section : "Overview")</span></span></div><span class="admin-sample-badge">@(live ? "Live catalogue records" : "Prototype · sample data")</span></header>
+<main id="admin-main" class="admin-main" tabindex="-1">@RenderBody()</main>
+<footer class="admin-footer">ILLiasu Local Mall · Administration <span>@(live ? section + " · Admin / InventoryManager" : "Development only · Admin role required / sample records")</span></footer>
+</div>
+<dialog id="admin-drawer" class="admin-drawer" aria-labelledby="drawer-title"><div class="admin-drawer-heading"><h2 id="drawer-title">Navigation</h2><button type="button" class="admin-icon-button" data-close-drawer aria-label="Close navigation">×</button></div><partial name="_AdminNavigation" /></dialog>
+<dialog id="admin-preview-dialog" class="admin-preview-dialog" aria-labelledby="preview-title"><div class="flex items-center justify-between gap-4"><p class="eyebrow">Design preview</p><button type="button" class="admin-icon-button" data-close-preview aria-label="Close preview">×</button></div><h2 id="preview-title">Coming in a later phase</h2><p id="admin-preview-message"></p><button class="button button-primary" type="button" data-close-preview>Back to overview</button></dialog>
+<noscript><p class="admin-noscript">JavaScript is off. Dashboard and period links remain readable. Menu/action previews require JavaScript. <a asp-area="" asp-controller="Home" asp-action="Index">Return to storefront</a>.</p></noscript>
+<script src="~/js/admin-prototype.js" asp-append-version="true" defer></script>
+@if (live) { <script src="~/js/admin-categories.js" asp-append-version="true" defer></script> }
+</body></html>

@@ -1,0 +1,58 @@
+// Requires ProductCreateSmoke --preview and a local headless Edge CDP endpoint on 9225.
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+(async () => {
+  const fixture = JSON.parse(fs.readFileSync(path.join(os.tmpdir(), 'illiasu-product-edit-preview.json')));
+  const tab = await (await fetch('http://localhost:9225/json/new?about:blank', { method: 'PUT' })).json();
+  const ws = new WebSocket(tab.webSocketDebuggerUrl);
+  await new Promise(resolve => ws.addEventListener('open', resolve, { once: true }));
+  let seq = 0; const pending = new Map();
+  ws.addEventListener('message', event => { const msg = JSON.parse(event.data); if (msg.id) { pending.get(msg.id)?.(msg); pending.delete(msg.id); } });
+  const call = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, msg => msg.error ? reject(msg.error) : resolve(msg.result)); ws.send(JSON.stringify({ id, method, params })); });
+  const evaluate = async expression => (await call('Runtime.evaluate', { expression, returnByValue: true })).result.value;
+  await call('Network.enable');
+  for (const cookie of fixture.cookies) await call('Network.setCookie', { ...cookie, url: 'https://localhost:7116' });
+  const out = path.join(os.tmpdir(), 'illiasu-product-edit-screenshots'); fs.mkdirSync(out, { recursive: true });
+  const results=[];
+  const wait=async expression=>{for(let i=0;i<100;i++){if(await evaluate(expression))return;await new Promise(r=>setTimeout(r,100));}throw new Error('Timed out: '+expression);};
+  const check=async(expression,label)=>{if(!await evaluate(expression))throw new Error(label);results.push(label);};
+  const visit=async()=>{await call('Page.navigate',{url:'https://localhost:7116/Admin/Products/Edit/'+fixture.id});await wait(`document.readyState==='complete' && !!document.querySelector('#product-create-form')`);};
+  const fill=async(name,value)=>evaluate(`{const x=document.querySelector('#product-create-form [name="${name}"]');x.value=${JSON.stringify(value)};x.dispatchEvent(new Event('input',{bubbles:true}));x.dispatchEvent(new Event('change',{bubbles:true}));}`);
+  const mode=async(index,value)=>evaluate(`document.querySelector('[name="Variants[${index}].StockMode"][value="${value}"]').click()`);
+  for(const width of [375,768,1440]) {
+    await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false});await visit();
+    await check(`document.documentElement.scrollWidth<=innerWidth && getComputedStyle(document.body).fontFamily.includes('Inter')`,'Edit fit and Inter '+width);
+    await check(`document.querySelectorAll('[data-existing-option]').length===6 && document.querySelectorAll('[data-variant-list] [data-variant]').length===0`,'Existing options separated from optional additions '+width);
+    await check(`!document.querySelector('[name="ExistingVariants[0].Sku"]') && !document.querySelector('[name="ExistingVariants[0].UnitOfMeasureId"]') && document.querySelector('[data-existing-option]').textContent.includes('Stock behaviour (read-only)')`,'Immutable existing fields read-only '+width);
+    await evaluate(`document.querySelector('[data-add-variant]').click()`);await fill('Variants[0].Name','Browser shared carton');await fill('Variants[0].Sku',fixture.query+'-browser');await fill('Variants[0].UnitOfMeasureId',fixture.packId);await fill('Variants[0].Price','101');await mode(0,'Shared');
+    await check(`document.querySelector('[name="Variants[0].StockOwnerRowKey"] option[value="${fixture.rootId}"]')!==null && document.querySelector('[name="Variants[0].StockOwnerRowKey"]').options.length===4`,'Only independent existing roots offered '+width);
+    await fill('Variants[0].StockOwnerRowKey',fixture.rootId);await fill('Variants[0].UnitsPerSale','12');
+    await check(`document.querySelector('[data-stock-summary]').textContent.includes('removes 12') && document.querySelector('[data-stock-summary]').textContent.includes('Single bottle')`,'Existing-source stock summary '+width);
+    await evaluate(`document.querySelector('[data-add-variant]').click()`);
+    await check(`document.querySelector('[name="Variants[0].StockOwnerRowKey"]').value===${JSON.stringify(fixture.rootId)} && !document.querySelector('[name="Variants[0].StockOwnerRowKey"] option[value="'+document.querySelector('[name="Variants[1].ClientRowKey"]').value+'"]')`,'Source retained; incomplete option excluded '+width);
+    await fill('Variants[1].UnitOfMeasureId',fixture.unitId);
+    await check(`!!document.querySelector('[name="Variants[0].StockOwnerRowKey"] option[value="'+document.querySelector('[name="Variants[1].ClientRowKey"]').value+'"]')`,'New independent root offered after unit selection '+width);
+    await evaluate(`document.querySelectorAll('[data-remove-variant]')[1].click()`);
+    await check(`[...document.querySelectorAll('#product-create-form label[for]')].every(l=>document.getElementById(l.htmlFor)) && [...document.querySelectorAll('#product-create-form [aria-describedby]')].every(e=>e.getAttribute('aria-describedby').split(' ').every(id=>document.getElementById(id)))`,'Label and error associations '+width);
+    const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(out,'edit-product-'+width+'.png'),Buffer.from(shot.data,'base64'));
+  }
+  await evaluate(`document.querySelector('#product-create-form').requestSubmit()`);
+  await wait(`location.pathname==='/Admin/Products' && document.readyState==='complete'`);
+  await check(`document.body.textContent.includes('Product updated')`,'Real browser edit/add shared option saved');
+  await visit();
+  await evaluate(`{const fields=[...document.querySelectorAll('[data-existing-option] input[name$=".Barcode"]')];const used=fields.find(f=>f.value);fields.find(f=>!f.value).value=used.value;document.querySelector('#product-create-form').requestSubmit();}`);
+  await wait(`!!document.querySelector('.validation-summary-errors')`);
+  await check(`document.activeElement.matches('.validation-summary-errors') && !!document.querySelector('.field-validation-error[data-valmsg-for$=".Barcode"]')`,'Duplicate barcode error and summary focus');
+  await evaluate(`document.querySelector('.validation-summary-errors a').click()`);
+  await check(`document.activeElement.name.endsWith('.Barcode')`,'Error link focuses barcode');
+  await visit();
+  await fill('ExistingVariants[0].Price','-1');await evaluate(`document.querySelector('#product-create-form').submit()`);
+  await wait(`!!document.querySelector('.validation-summary-errors')`);
+  await check(`document.querySelector('[name="ExistingVariants[0].Price"]').value==='-1' && !!document.querySelector('.field-validation-error[data-valmsg-for="ExistingVariants[0].Price"]')`,'Invalid price and rowversions retained');
+  await visit();await evaluate(`document.querySelector('[data-add-variant]').click()`);await fill('Variants[0].Name','Invalid shared option');await fill('Variants[0].Sku',fixture.query+'-bad-browser');await fill('Variants[0].UnitOfMeasureId',fixture.packId);await fill('Variants[0].Price','20');await mode(0,'Shared');await fill('Variants[0].StockOwnerRowKey',fixture.rootId);await fill('Variants[0].UnitsPerSale','0');
+  const key=await evaluate(`document.querySelector('[name="Variants[0].ClientRowKey"]').value`);
+  await evaluate(`document.querySelector('#product-create-form').submit()`);await wait(`!!document.querySelector('.validation-summary-errors')`);
+  await check(`document.querySelector('[name="Variants[0].ClientRowKey"]').value===${JSON.stringify(key)} && document.querySelector('[name="Variants[0].StockOwnerRowKey"]').value===${JSON.stringify(fixture.rootId)} && document.querySelector('[name="Variants[0].UnitsPerSale"]').value==='0'`,'Invalid new mapping retains temporary key, existing source and quantity');
+  console.log(JSON.stringify({results,screenshots:out},null,2));await call('Page.close');ws.close();fs.writeFileSync(path.join(os.tmpdir(),'illiasu-product-edit-preview.json.done'),'done');
+})().catch(error=>{console.error(error);process.exit(1);});

@@ -1,0 +1,14 @@
+@{
+    var links = new[] { ("Orders","orders"), ("Stock","products"), ("Suppliers","customers"), ("Purchases","orders"), ("Delivery Zones","delivery"), ("Offers & Discounts","offers"), ("Reviews","reviews"), ("Reports","reports"), ("Customers","customers"), ("Settings","settings") };
+}
+<div class="admin-brand"><span class="admin-brand-mark">i.</span><span>ILLiasu<span class="admin-brand-caption">LOCAL MALL / ADMIN</span></span></div>
+<p class="admin-nav-label">Workspace</p>
+<nav aria-label="Admin navigation" class="admin-nav">
+    @if (User.IsInRole("Admin")) { <a asp-area="Admin" asp-controller="Overview" asp-action="Index" aria-current="@(ViewData["LiveCategories"] is true || ViewData["LiveProducts"] is true ? null : "page")"><partial name="_AdminIcon" model='@("overview")' />Overview</a> }
+    <a asp-area="Admin" asp-controller="Products" asp-action="Index" aria-current="@(ViewData["LiveProducts"] is true ? "page" : null)"><partial name="_AdminIcon" model='@("products")' />Products</a>
+    <a asp-area="Admin" asp-controller="Categories" asp-action="Index" aria-current="@(ViewData["LiveCategories"] is true ? "page" : null)"><partial name="_AdminIcon" model='@("categories")' />Categories</a>
+    @if (User.IsInRole("Admin")) { @foreach (var (label, icon) in links) {
+        <button type="button" data-admin-preview="@label"><partial name="_AdminIcon" model="icon" /><span>@label</span><span class="admin-nav-preview">Preview</span></button>
+    } }
+</nav>
+<div class="admin-sidebar-bottom"><p class="admin-nav-label">Design workspace</p><p>Category/product records are connected.<br />Other modules use sample data.</p><a asp-area="" asp-controller="Home" asp-action="Index">View storefront <span aria-hidden="true">↗</span></a></div>

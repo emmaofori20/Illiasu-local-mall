@@ -1,0 +1,37 @@
+@model AdminPagination
+@{
+    var start = Model.Total == 0 ? 0 : (Model.Page - 1) * Model.PageSize + 1;
+    var end = start == 0 ? 0 : start + Model.Count - 1;
+    var numbers = new[] { 1, Model.Pages, Model.Page - 1, Model.Page, Model.Page + 1 }
+        .Where(n => n >= 1 && n <= Model.Pages).Distinct().Order().ToArray();
+    Dictionary<string,string> Routes(int page) => new(Model.Filters) {
+        ["page"] = page.ToString(CultureInfo.InvariantCulture),
+        ["pageSize"] = Model.PageSize.ToString(CultureInfo.InvariantCulture)
+    };
+}
+<div class="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5 text-sm">
+    <div class="flex flex-wrap items-center gap-4">
+        <p class="text-text-muted tabular-nums">Showing @start–@end of @Model.Total @Model.Key</p>
+        <form method="get" class="flex items-center gap-2" data-page-size-form>
+            @foreach (var filter in Model.Filters) { <input type="hidden" name="@filter.Key" value="@filter.Value" /> }
+            <label for="@Model.Key-page-size" class="text-text-muted">Per page</label>
+            <select id="@Model.Key-page-size" name="pageSize" class="category-input w-20" data-page-size>
+                @foreach (var size in new[] { 10, 25, 50, 100 }) { <option value="@size" selected="@(size == Model.PageSize)">@size</option> }
+            </select>
+            <button type="submit" class="button button-secondary" data-page-size-apply>Apply</button>
+        </form>
+    </div>
+    <nav aria-label="@Model.Label pagination" class="flex flex-wrap items-center gap-1">
+        @if (Model.Page > 1) {
+            <a class="category-page-link" asp-action="Index" asp-all-route-data="Routes(Model.Page - 1)" aria-label="Previous page"><span aria-hidden="true">←</span></a>
+        } else { <button class="category-page-link" disabled aria-label="Previous page"><span aria-hidden="true">←</span></button> }
+        @for (var i = 0; i < numbers.Length; i++) {
+            var number = numbers[i];
+            if (i > 0 && number - numbers[i - 1] > 1) { <span class="px-1 text-text-muted" aria-hidden="true">…</span> }
+            <a class="@(number == Model.Page ? "category-page-link bg-brand text-on-brand border-brand hover:bg-brand-hover" : "category-page-link")" asp-action="Index" asp-all-route-data="Routes(number)" aria-label="Page @number" aria-current="@(number == Model.Page ? "page" : null)">@number</a>
+        }
+        @if (Model.Page < Model.Pages) {
+            <a class="category-page-link" asp-action="Index" asp-all-route-data="Routes(Model.Page + 1)" aria-label="Next page"><span aria-hidden="true">→</span></a>
+        } else { <button class="category-page-link" disabled aria-label="Next page"><span aria-hidden="true">→</span></button> }
+    </nav>
+</div>

@@ -1,0 +1,30 @@
+@model VariantCreateInput
+@{
+    var units = (IReadOnlyList<ILLiasu_Local_Mall.Domain.Entities.UnitOfMeasure>)ViewData["CreateUnits"]!;
+    var prefix = ViewData.TemplateInfo.HtmlFieldPrefix;
+    var rowId = prefix.Replace("[", "_").Replace("]", "_");
+    string ErrorId(string field) => rowId + "_" + field + "_error";
+    var advanced = Model.Conversions.Count > 0 || ViewData.ModelState.Any(e => e.Key.StartsWith(prefix + ".Conversions") && e.Value!.Errors.Count > 0) ||
+        ViewData.ModelState.Any(e => (e.Key == prefix + ".QuantityStep" || e.Key == prefix + ".AllowFractionalQuantity") && e.Value!.Errors.Count > 0);
+}
+<fieldset data-variant class="min-w-0 rounded-xl border border-border p-5 phone:p-4">
+<legend class="px-2 text-sm font-semibold">Selling option <span data-variant-number></span></legend>
+<input asp-for="ClientRowKey" type="hidden" data-row-key />
+<span asp-validation-for="ClientRowKey" id="@ErrorId("ClientRowKey")" class="create-error"></span>
+<div class="mb-4 flex justify-end"><button type="button" data-remove-variant class="min-h-11 text-sm text-error underline disabled:cursor-not-allowed disabled:opacity-50" aria-describedby="@(rowId)_owner_warning" hidden>Remove unsaved option</button></div>
+<div class="grid grid-cols-2 gap-5 phone:grid-cols-1">
+<div><label asp-for="Name" class="category-label">Size / Packaging option</label><input asp-for="Name" class="category-input" required maxlength="120" data-option-name aria-describedby="@ErrorId("Name")" /><span asp-validation-for="Name" id="@ErrorId("Name")" class="create-error"></span></div>
+<div><label asp-for="Sku" class="category-label">Product code (SKU)</label><input asp-for="Sku" class="category-input" required maxlength="64" autocomplete="off" aria-describedby="@ErrorId("Sku")" /><span asp-validation-for="Sku" id="@ErrorId("Sku")" class="create-error"></span></div>
+<div><label asp-for="Barcode" class="category-label">Barcode (optional)</label><input asp-for="Barcode" class="category-input" maxlength="64" autocomplete="off" aria-describedby="@ErrorId("Barcode")" /><span asp-validation-for="Barcode" id="@ErrorId("Barcode")" class="create-error"></span></div>
+<div><label asp-for="UnitOfMeasureId" class="category-label">Selling unit</label><select asp-for="UnitOfMeasureId" class="category-input" required data-sold-unit aria-describedby="@(rowId)_unit_help @ErrorId("UnitOfMeasureId")"><option value="">Choose a unit</option>@foreach(var u in units) { <option value="@u.Id" data-unit-name="@u.Name" data-unit-symbol="@u.Symbol" data-unit-kind="@((int)u.Kind)" data-unit-decimals="@u.DecimalPlaces">@u.Name (@u.Symbol)</option> }</select><p id="@(rowId)_unit_help" class="mt-2 text-sm leading-6 text-text-muted">Piece is one item; Pack and Carton are packaged options. Kilogram and Litre are measured quantities. Set packaging contents explicitly; no conversion is assumed.</p><span asp-validation-for="UnitOfMeasureId" id="@ErrorId("UnitOfMeasureId")" class="create-error"></span></div>
+<div class="col-span-2 phone:col-span-1"><label asp-for="Price" class="category-label">Selling price (GH₵ per sold unit)</label><input asp-for="Price" type="number" class="category-input" min="0" step="0.01" required aria-describedby="@(rowId)_price_help @ErrorId("Price")" /><p id="@(rowId)_price_help" class="mt-2 text-sm text-text-muted">Enter this option's own price. Pack prices are never calculated from single-item prices.</p><span asp-validation-for="Price" id="@ErrorId("Price")" class="create-error"></span></div>
+</div>
+<partial name="_StockBehaviour" model="Model" />
+<div class="mt-5 flex flex-wrap gap-5 text-sm"><label class="flex min-h-11 items-center gap-2"><input asp-for="IsActive" class="h-5 w-5 accent-brand" />Active</label><label class="flex min-h-11 items-center gap-2"><input asp-for="IsAvailable" class="h-5 w-5 accent-brand" />Manually available</label></div>
+<details class="mt-5 border-t border-border pt-3" open="@(advanced ? "open" : null)"><summary class="min-h-11 cursor-pointer py-3 text-sm font-semibold">Advanced: quantity increments and receiving units</summary>
+<div class="mt-3"><label asp-for="QuantityStep" class="category-label">Selling quantity increment</label><input asp-for="QuantityStep" type="number" class="category-input" min="0.000001" step="0.000001" required aria-describedby="@ErrorId("QuantityStep")" /><span asp-validation-for="QuantityStep" id="@ErrorId("QuantityStep")" class="create-error"></span></div>
+<label class="mt-3 flex min-h-11 items-center gap-2 text-sm"><input asp-for="AllowFractionalQuantity" class="h-5 w-5 accent-brand" aria-describedby="@ErrorId("AllowFractionalQuantity")" />Allow fractions (weighed/measured goods only)</label><span asp-validation-for="AllowFractionalQuantity" id="@ErrorId("AllowFractionalQuantity")" class="create-error"></span>
+<div class="mt-4 flex flex-wrap items-center justify-between gap-3"><h3 class="text-sm font-semibold">Receiving / counting units</h3><button type="button" data-add-conversion class="button button-secondary" hidden>+ Add receiving unit</button></div><p class="mt-2 text-sm leading-6 text-text-muted">Optional input-unit conversions for this option. They do not set a selling price, unpack sealed goods or create shared stock.</p><span asp-validation-for="Conversions" id="@ErrorId("Conversions")" class="create-error"></span><div data-conversion-list class="mt-4 space-y-4">@for(var j=0;j<Model.Conversions.Count;j++) { var nested=new ViewDataDictionary(ViewData);nested.TemplateInfo.HtmlFieldPrefix=prefix+$".Conversions[{j}]";<partial name="_CreateConversion" model="Model.Conversions[j]" view-data="nested" /> }</div>
+</details>
+</fieldset>
+

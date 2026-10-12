@@ -1,0 +1,20 @@
+@model VariantCreateInput
+@{
+    var options = (IReadOnlyList<VariantCreateInput>)ViewData["CreateOptions"]!;
+    var rowId = ViewData.TemplateInfo.HtmlFieldPrefix.Replace("[", "_").Replace("]", "_");
+    string ErrorId(string field) => rowId + "_" + field + "_error";
+}
+<fieldset class="mt-6 border-t border-border pt-5" aria-describedby="@(rowId)_stock_help">
+<legend class="px-1 text-sm font-semibold">Stock behaviour</legend>
+<p id="@(rowId)_stock_help" class="mt-2 text-sm leading-6 text-text-muted">Choose how this option will be counted. These are stock rules only; no stock quantities are created or changed.</p>
+<div class="mt-4 space-y-3">
+<label for="@(rowId)_StockMode_Own" class="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-border p-3 text-sm"><input asp-for="StockMode" id="@(rowId)_StockMode_Own" type="radio" value="Own" class="mt-0.5 h-5 w-5 shrink-0 accent-brand" data-stock-mode aria-describedby="@ErrorId("StockMode")" /><span><span class="font-semibold">Count this option separately</span><span class="mt-1 block text-text-muted">Its own stock pool, including sealed cartons or distinct rice bags.</span></span></label>
+<label for="@(rowId)_StockMode_Shared" class="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-border p-3 text-sm"><input asp-for="StockMode" id="@(rowId)_StockMode_Shared" type="radio" value="Shared" class="mt-0.5 h-5 w-5 shrink-0 accent-brand" data-stock-mode aria-describedby="@ErrorId("StockMode")" /><span><span class="font-semibold">Use stock from another option</span><span class="mt-1 block text-text-muted">For packs/cartons sold from the same pool of interchangeable items.</span></span></label>
+</div><span asp-validation-for="StockMode" id="@ErrorId("StockMode")" class="create-error"></span>
+<p id="@(rowId)_owner_warning" data-owner-warning class="mt-3 text-sm text-warning" role="status"></p>
+<div data-shared-fields class="mt-5 grid grid-cols-2 gap-5 phone:grid-cols-1">
+<div><label asp-for="StockOwnerRowKey" class="category-label">Use stock from</label><select asp-for="StockOwnerRowKey" class="category-input" data-stock-owner aria-describedby="@ErrorId("StockOwnerRowKey")"><option value="">Choose a separately counted option</option>@foreach(var owner in options.Where(o => o.ClientRowKey != Model.ClientRowKey && o.StockMode == StockBehaviour.Own && o.UnitOfMeasureId != Guid.Empty)) { <option value="@owner.ClientRowKey">@(string.IsNullOrWhiteSpace(owner.Name) ? "Unnamed selling option" : owner.Name)@(string.IsNullOrWhiteSpace(owner.Sku) ? "" : " — " + owner.Sku)</option> }@if(Model.StockOwnerRowKey.HasValue && !options.Any(o => o.ClientRowKey == Model.StockOwnerRowKey && o.ClientRowKey != Model.ClientRowKey && o.StockMode == StockBehaviour.Own && o.UnitOfMeasureId != Guid.Empty)) { <option value="@Model.StockOwnerRowKey">Previous source is invalid — choose another option</option> }</select><span asp-validation-for="StockOwnerRowKey" id="@ErrorId("StockOwnerRowKey")" class="create-error"></span></div>
+<div><label asp-for="UnitsPerSale" class="category-label" data-consumption-label>Stock quantity per sale / Units per pack</label><input asp-for="UnitsPerSale" class="category-input" type="number" min="0.000001" max="999999999999.999999" step="0.000001" data-stock-quantity aria-describedby="@(rowId)_quantity_help @ErrorId("UnitsPerSale")" /><p id="@(rowId)_quantity_help" data-consumption-help class="mt-2 text-sm text-text-muted">For shared stock, enter the source quantity used by one sold unit. No pack size is assumed.</p><span asp-validation-for="UnitsPerSale" id="@ErrorId("UnitsPerSale")" class="create-error"></span></div>
+</div>
+<p data-stock-summary class="mt-4 rounded-xl bg-surface-subtle p-4 text-sm leading-6" role="status" aria-live="polite" aria-atomic="true">@(Model.StockMode == StockBehaviour.Own ? "This option is counted separately: one sold unit uses one of its own stock units. Other option balances remain unchanged." : "Choose a separately counted source and enter the stock quantity used by one sale.")</p>
+</fieldset>

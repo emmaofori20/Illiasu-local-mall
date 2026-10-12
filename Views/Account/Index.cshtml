@@ -1,0 +1,4 @@
+@{ ViewData["Title"] = "Your account"; ViewData["Description"] = "You are signed in to ILLiasu Local Mall."; }
+<p class="text-sm text-text-muted break-words mb-6">@User.Identity?.Name</p>
+@if(User.IsInRole("Admin")){<a asp-area="Admin" asp-controller="Overview" asp-action="Index" class="button button-primary w-full mb-4">Open admin overview</a>}
+<a asp-action="Logout" class="button button-secondary w-full">Sign out</a>

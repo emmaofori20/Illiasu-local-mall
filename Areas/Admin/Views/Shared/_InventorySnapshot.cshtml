@@ -1,0 +1,36 @@
+@model DashboardPrototype
+<section class="admin-stock-section" aria-labelledby="stock-snapshot-title">
+    <h2 id="stock-snapshot-title">Stock & purchasing</h2>
+    <p><strong>Requested additions · commercial approval pending.</strong> Sample snapshot at 10 October 2026, independent of the sales period. Quantities are mixed variant sale units, not a combined weight. No live inventory or purchasing operations.</p>
+    <div class="admin-stock-summary">@foreach(var metric in Model.StockMetrics){<partial name="_MetricCard" model="metric" />}</div>
+    <div class="admin-stock-panels">
+        <section class="admin-panel" aria-labelledby="stock-attention-title">
+            <partial name="_PanelHeading" model='@(new PanelHeading("stock-attention-title", "Stock needs attention", "Sample available quantities / variant thresholds", "Stock"))' />
+            <ul class="admin-stock-list">
+                @foreach(var item in Model.Stock.Where(s => s.Available < s.Minimum)) {
+                    <li><div><strong>@item.Name <span class="text-text-muted font-normal">/ @item.Variant</span></strong><small>@item.Available available · @item.OnHand on hand · @item.Reserved reserved · minimum @item.Minimum</small></div><partial name="_StatusBadge" model='@(new PipelineStage(item.Available == 0 ? "Out of stock" : "Low stock", 0, item.Available == 0 ? "error" : "warning"))' /></li>
+                }
+            </ul>
+            <p class="admin-panel-note">Sample indicators only. No alerts are sent. Counts refer to product variants; threshold rules await approval.</p>
+        </section>
+        <section class="admin-panel" aria-labelledby="purchases-title">
+            <partial name="_PanelHeading" model='@(new PanelHeading("purchases-title", "Pending purchase orders", "Fictional suppliers, quantities and costs", "Purchases"))' />
+            <ul class="admin-stock-list">
+                @foreach(var order in Model.Purchases) {
+                    <li><div><strong>@order.Reference</strong><small>@order.Supplier · @order.Product</small><small>@order.Received / @order.Ordered received · GH₵ @order.Cost.ToString("N2") per unit</small></div><partial name="_StatusBadge" model='@(new PipelineStage(order.Received > 0 ? "Partial receipt" : "Issued", 0, order.Received > 0 ? "info" : "brand"))' /></li>
+                }
+            </ul>
+            <p class="admin-panel-note">Ordering does not increase stock. Only a valid accepted receipt will post inventory in the future implementation. These fixtures are independent examples, not a reconciled ledger.</p>
+        </section>
+    </div>
+    <section class="admin-panel admin-recent" aria-labelledby="movements-title">
+        <partial name="_PanelHeading" model='@(new PanelHeading("movements-title", "Recent stock movements", "Selected sample examples / not a complete ledger", "Stock"))' />
+        <p class="admin-table-hint">Scroll horizontally to view all movement details.</p>
+        <div class="admin-table-scroll" tabindex="0" role="region" aria-label="Sample inventory movement examples">
+            <table class="admin-table"><caption class="sr-only">Fictional inventory movement examples, 10 October 2026, recorded by Demo operator</caption><thead><tr><th scope="col">Reference</th><th scope="col">Variant</th><th scope="col">Movement</th><th scope="col">Quantity</th><th scope="col">Reason</th><th scope="col">Recorded by</th></tr></thead><tbody>
+                @foreach(var movement in Model.Movements){<partial name="_StockMovementRow" model="movement" />}
+            </tbody></table>
+        </div>
+        <p class="admin-panel-note">Sample date: 10 Oct 2026. Adjustments require reasons; future posted movements will retain actor, timestamp and source reference. Inventory value above is fictional cost × on-hand, not a valuation report; costing method is pending approval.</p>
+    </section>
+</section>

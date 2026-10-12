@@ -1,0 +1,20 @@
+﻿<header class="site-header">
+    <div class="mall-container max-w-storefront w-[calc(100%-64px)] mx-auto phone:w-[calc(100%-32px)] header-main">
+        <a class="brand" asp-controller="Home" asp-action="Index" aria-label="ILLiasu Local Mall home"><span class="brand-symbol" aria-hidden="true">i.</span><span>ILLiasu<span class="brand-subtitle">LOCAL MALL</span></span></a>
+        <form class="search-form" role="search" aria-label="Search demonstration catalogue" action="@Url.Action("Index", "Home")#featured" method="get" id="sample-search">
+            <label class="sr-only" for="search-input">Search sample products</label>
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+            <input id="search-input" name="q" type="search" placeholder="Search sample groceries…" maxlength="100" />
+            <button type="submit" aria-label="Search sample products">Search <span aria-hidden="true">↗</span></button>
+        </form>
+        <div class="header-actions">
+            <a class="header-action" asp-controller="Account" asp-action="Index" aria-label="Your account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 21v-2a7.5 7.5 0 0 1 15 0v2"/></svg><span>Account <small>@(User.Identity?.IsAuthenticated == true ? "Signed in" : "Sign in")</small></span></a>
+            <button type="button" class="header-action" aria-label="Cart preview" data-preview="Cart and checkout are not implemented. No items can be ordered from this prototype."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 7h14l1 14H4L5 7Z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/></svg><span>Cart <small>Preview</small></span></button>
+            <button type="button" class="icon-button menu-toggle" aria-expanded="false" aria-controls="storefront-nav" aria-label="Open navigation">☰</button>
+        </div>
+    </div>
+    <nav class="mall-container max-w-storefront w-[calc(100%-64px)] mx-auto phone:w-[calc(100%-32px)] header-nav" id="storefront-nav" aria-label="Main navigation">
+        <div class="nav-links"><a asp-controller="Home" asp-action="Index" asp-fragment="categories">Browse categories <span aria-hidden="true">⌄</span></a><a asp-controller="Home" asp-action="Index" asp-fragment="featured">Featured essentials</a><a asp-controller="Home" asp-action="Index" asp-fragment="offers">Offers preview</a><a asp-controller="Home" asp-action="Index" asp-fragment="about">Our shop</a></div>
+        <span class="shop-location"><span aria-hidden="true">⌖</span> Ayigya Market, Ghana</span>
+    </nav>
+</header>

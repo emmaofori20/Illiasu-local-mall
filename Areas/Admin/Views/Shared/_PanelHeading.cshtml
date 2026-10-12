@@ -1,0 +1,2 @@
+@model PanelHeading
+<div class="admin-panel-heading"><div><h2 id="@Model.Id">@Model.Title</h2><p>@Model.Subtitle</p></div>@if(Model.Action is not null){<button type="button" class="admin-text-action" data-admin-preview="@Model.Action">@Model.Action <span aria-hidden="true">↗</span></button>}</div>

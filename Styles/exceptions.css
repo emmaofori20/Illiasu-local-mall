@@ -1,0 +1,9 @@
+/* Native browser/accessibility exceptions that should remain ordinary CSS. */
+button,a,input { -webkit-tap-highlight-color: transparent; }
+a,button { transition: background var(--motion-fast),color var(--motion-fast),box-shadow var(--motion-fast); }
+[hidden] { display: none!important; }
+.sr-only { clip: rect(0,0,0,0); }
+@media(prefers-reduced-motion:reduce) {
+*,*::before,*::after { transition: none!important;
+  animation: none!important; }
+}

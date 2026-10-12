@@ -1,0 +1,12 @@
+@model CategoryForm
+@{ var editing = Model.Id != Guid.Empty; ViewData["Title"] = editing ? "Edit category" : "Create category"; }
+<div class="admin-page-heading"><div><p class="eyebrow">Catalogue management</p><h1>@ViewData["Title"]</h1><p>@(editing ? "Keep category details clear and consistent." : "Create a new, active category for the shared catalogue.")</p></div><a class="button button-secondary" asp-action="Index">Back to categories</a></div>
+<div class="grid grid-cols-[minmax(0,2fr)_minmax(240px,1fr)] gap-6 tablet:grid-cols-1">
+<section class="admin-panel p-8 phone:p-5"><form asp-action="@(editing ? "Edit" : "Create")" asp-route-id="@(editing ? Model.Id : (Guid?)null)" method="post" data-submit-state data-category-mode="@(editing ? "edit" : "create")">
+<div asp-validation-summary="All" class="category-errors" role="alert"></div>
+@if (editing) { <input asp-for="Snapshot" type="hidden" /> }
+<partial name="_Fields" model="Model" />
+<div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border pt-6"><button class="button button-primary" type="submit" data-busy-label="Saving...">@(editing ? "Save changes" : "Create category")</button><a class="button button-secondary" asp-action="Index">Cancel</a><span class="text-sm text-text-muted" role="status" data-form-status></span></div>
+</form></section>
+<aside class="admin-panel self-start p-6"><h2 class="text-base font-semibold">Category guidelines</h2><p class="mt-3 text-sm leading-6 text-text-muted">Categories are flat, without parent categories. Choose a short, recognizable name and a unique slug such as <strong>fresh-produce</strong>.</p><p class="mt-4 text-sm leading-6 text-text-muted">Slugs are reserved across active and inactive categories. Duplicate display names are allowed; choose distinct names where possible.</p>@if(editing) { <p class="mt-4 text-sm leading-6 text-text-muted">@Model.Products products reference this category. Editing preserves those links. Changing a slug may affect future storefront URLs; redirects are not implemented.</p> }<p class="mt-4 text-sm leading-6 text-text-muted">Activation changes use a separate confirmation screen. Categories cannot be permanently deleted here.</p></aside>
+</div>

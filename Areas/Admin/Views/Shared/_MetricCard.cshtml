@@ -1,0 +1,2 @@
+@model MetricCard
+<section class="admin-metric" aria-label="@Model.Label sample metric"><div class="admin-metric-label"><span class="admin-metric-icon"><partial name="_AdminIcon" model="Model.Icon" /></span>@Model.Label</div><p class="admin-metric-value">@Model.Value</p><p class="admin-metric-detail">@Model.Detail</p>@if(Model.ShowTrend){<svg class="admin-sparkline" viewBox="0 0 180 42" aria-hidden="true"><path d="M0 38 14 29 27 32 42 21 55 24 69 17 83 20 98 9 113 15 128 6 143 11 159 3 180 8" /></svg>}</section>

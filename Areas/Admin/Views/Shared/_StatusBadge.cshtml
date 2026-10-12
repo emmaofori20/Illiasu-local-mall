@@ -1,0 +1,3 @@
+@model PipelineStage
+@{ var tone = Model.Tone switch { "error" => "bg-error-surface text-error", "info" => "bg-info-surface text-info", "warning" => "bg-warning-surface text-warning", "brand" => "bg-soft-green text-brand", "success" => "bg-success-surface text-success", _ => "bg-background text-text-muted" }; }
+<span class="admin-status @tone"><span aria-hidden="true">●</span>@Model.Label</span>

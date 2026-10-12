@@ -1,0 +1,28 @@
+@model CategoryList
+@{ ViewData["Title"] = "Categories"; }
+<div class="admin-page-heading"><div><p class="eyebrow">Catalogue management</p><h1>Categories</h1><p>Organize the catalogue with clear, consistent shopping categories.</p></div><a class="button button-primary" asp-action="Create" data-category-dialog><svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Add category</a></div>
+@if (TempData["CategorySuccess"] is string message) { <p role="status" tabindex="-1" data-category-success class="mb-6 rounded-xl bg-success-surface p-4 text-sm text-success">@message</p> }
+<p class="admin-notice mb-6">Live category records. Product management and the customer catalogue are not connected yet; the storefront still uses demonstration data.</p>
+<section data-admin-list data-categories-list class="admin-panel p-6 phone:p-4" aria-labelledby="category-list-title">
+<div class="mb-6 flex items-center justify-between gap-4"><h2 id="category-list-title" class="text-lg font-semibold tracking-tight">All categories <span class="ml-2 text-sm font-normal text-text-muted">@Model.Total matching</span></h2></div>
+<form method="get" class="mb-6 flex flex-wrap items-end gap-3" data-submit-state>
+<input type="hidden" name="pageSize" value="@Model.PageSize" />
+<div class="min-w-0 flex-1 basis-60"><label class="category-label" for="category-search">Search categories</label><input class="category-input" id="category-search" type="search" name="q" value="@Model.Search" maxlength="100" placeholder="Name or slug" /></div>
+<div class="w-40 phone:w-full"><label class="category-label" for="category-filter">Status</label><select class="category-input" id="category-filter" name="status"><option value="all" selected="@(Model.Status == "all")">All statuses</option><option value="active" selected="@(Model.Status == "active")">Active</option><option value="inactive" selected="@(Model.Status == "inactive")">Inactive</option></select></div>
+<button class="button button-secondary" type="submit" data-busy-label="Searching...">Search</button><a class="min-h-11 inline-flex items-center text-sm text-link underline" asp-action="Index">Clear</a><span class="sr-only" role="status" data-form-status></span>
+</form>
+@if (Model.Items.Count == 0) {
+<div class="rounded-xl border border-dashed border-border px-6 py-12 text-center"><h3 class="text-lg font-semibold">@(Model.Search.Length > 0 || Model.Status != "all" ? "No matching categories" : "Your catalogue starts here")</h3><p class="mx-auto mt-2 max-w-md text-sm text-text-muted">@(Model.Search.Length > 0 || Model.Status != "all" ? "Try another name or clear the filters." : "Create your first category to give future products a clear place in the catalogue.")</p><a class="button button-primary mt-6" asp-action="Create" data-category-dialog><svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Add category</a></div>
+} else {
+<p id="category-scroll-hint" class="admin-table-hint">On smaller screens, scroll the table to see actions.</p>
+<div class="admin-table-scroll" role="region" aria-label="Category records" aria-describedby="category-scroll-hint" tabindex="0"><table class="admin-table"><thead><tr><th scope="col">Category</th><th scope="col">Slug</th><th scope="col">Status</th><th scope="col">Linked products</th><th scope="col">Actions</th></tr></thead><tbody>
+@foreach (var item in Model.Items) {
+<tr><td class="max-w-60 whitespace-normal break-words font-semibold">@item.Name</td><td class="max-w-60 whitespace-normal break-words text-text-muted">@item.Slug</td><td><span class="@(item.IsActive ? "rounded-full bg-success-surface px-3 py-1 text-xs font-medium text-success" : "rounded-full bg-surface-subtle px-3 py-1 text-xs font-medium text-text-muted")">@(item.IsActive ? "Active" : "Inactive")</span></td><td class="tabular-nums">@item.Products</td><td><partial name="_Actions" model="item" /></td></tr>
+}
+</tbody></table></div>
+
+}
+<partial name="_Pagination" model="Model" />
+</section>
+
+<partial name="_AdminFormDialog" />

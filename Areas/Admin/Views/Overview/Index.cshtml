@@ -1,0 +1,41 @@
+@model DashboardPrototype
+@{
+    ViewData["Title"] = "Overview";
+    var heading = new PanelHeading("sales-title", "Sales overview", "Sample paid revenue · GHS");
+    var max = decimal.Ceiling(Model.Sales.Max() / 500) * 500;
+    string N(decimal v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+    var coordinates = Model.Sales.Select((v,i) => $"{N(50m + i * 680m / (Model.Sales.Length-1))},{N(245m - v / max * 205m)}").ToArray();
+    var line = "M" + string.Join(" L", coordinates);
+    var area = line + " L730,245 L50,245 Z";
+}
+<div class="admin-page-heading"><div><p class="eyebrow">ILLiasu Local Mall</p><h1>Overview</h1><p>A clear view of your shop, from orders to everyday favourites.</p></div><button type="button" class="button button-secondary" data-admin-preview="Export report">Export preview <span aria-hidden="true">↗</span></button></div>
+<div class="admin-notice"><span class="admin-notice-mark" aria-hidden="true">i</span><p><strong>Prototype — sample data.</strong> Metrics, products and orders are demonstrations. No live records or verified payments.</p></div>
+<div class="admin-period-caption">Showing the last <strong>@Model.Period days</strong> · sample period ending 10 October 2026</div>
+<div class="admin-overview-grid">
+<section class="admin-panel admin-sales" aria-labelledby="sales-title">
+<div class="admin-sales-top"><partial name="_PanelHeading" model="heading" /><nav class="admin-periods" aria-label="Sample sales period">@foreach(var days in new[]{7,30,90}) {<a asp-area="Admin" asp-controller="Overview" asp-action="Index" asp-route-period="@days" aria-current="@(days == Model.Period ? "true" : null)">@days days</a>}</nav></div>
+<div class="admin-sales-summary"><p>@Model.Money(Model.Revenue)</p><span>From @Model.PaidOrders.ToString("N0") sample paid orders</span></div>
+<figure class="admin-chart"><svg viewBox="0 0 760 285" role="img" aria-labelledby="chart-title chart-description"><title id="chart-title">Sample daily sales over @Model.Period days</title><desc id="chart-description">Demonstration daily paid revenue in Ghana cedis, totalling @Model.Money(Model.Revenue). Expand the data table below for daily values.</desc>
+@for(var i=0;i<5;i++){var y=40+i*51.25m;var amount=max*(4-i)/4;<g><line x1="50" x2="730" y1="@N(y)" y2="@N(y)" class="admin-chart-grid"/><text x="40" y="@N(y+4)" text-anchor="end" class="admin-chart-label">@amount.ToString("N0")</text></g>}
+<path d="@area" class="admin-chart-area"/><path d="@line" class="admin-chart-line"/><circle cx="730" cy="@N(245m-Model.Sales[^1]/max*205m)" r="4" class="admin-chart-end"/>
+@for(var i=0;i<4;i++){var date=new DateTime(2026,10,10).AddDays(-Model.Period+1 + (int)Math.Round(i*(Model.Period-1)/3d));<g><text x="@(50+i*680/3)" y="272" text-anchor="@(i==0 ? "start" : i==3 ? "end" : "middle")" class="admin-chart-label">@date.ToString("dd MMM",CultureInfo.InvariantCulture)</text></g>}
+</svg><figcaption>Daily sample sales · paid orders only · excludes unpaid orders</figcaption></figure>
+<details class="admin-chart-data"><summary>View sample chart data</summary><div class="admin-table-scroll" tabindex="0" role="region" aria-label="Daily sample sales data"><table class="admin-table"><caption class="sr-only">Daily sample revenue for the selected period</caption><thead><tr><th scope="col">Day</th><th scope="col">Revenue (GH₵)</th></tr></thead><tbody>@for(var i=0;i<Model.Sales.Length;i++){<tr><th scope="row">@(new DateTime(2026,10,10).AddDays(-Model.Period+1+i).ToString("dd MMM yyyy",CultureInfo.InvariantCulture))</th><td>@Model.Sales[i].ToString("N2",CultureInfo.InvariantCulture)</td></tr>}</tbody></table></div></details>
+</section>
+<div class="admin-metrics">@foreach(var metric in Model.Metrics){<partial name="_MetricCard" model="metric" />}</div>
+</div>
+<partial name="_InventorySnapshot" model="Model" />
+<div class="admin-support-grid">
+<section class="admin-panel" aria-labelledby="pipeline-title"><partial name="_PanelHeading" model='@(new PanelHeading("pipeline-title","Order pipeline","Sample fulfilment stages","Orders"))' />
+<div class="admin-pipeline-total"><strong>@Model.Orders.ToString("N0")</strong><span>sample orders in this period</span></div>
+<div class="admin-pipeline-track" aria-hidden="true"><span class="bg-info w-[27.38%]"></span><span class="bg-warning w-[20.24%]"></span><span class="bg-brand w-[9.52%]"></span><span class="bg-success w-[42.86%]"></span></div>
+<div class="admin-pipeline-stages">@foreach(var stage in Model.Pipeline){<div><partial name="_StatusBadge" model="stage"/><strong>@stage.Count.ToString("N0")</strong></div>}</div><p class="admin-panel-note">Fulfilment and payment are separate states. These stage counts are illustrative.</p></section>
+<section class="admin-panel" aria-labelledby="fulfilment-title"><partial name="_PanelHeading" model='@(new PanelHeading("fulfilment-title","Delivery & pickup","Sample order mix"))' />
+<div class="admin-fulfilment"><div class="admin-donut" role="img" aria-label="Sample order mix: 64 percent delivery, 36 percent pickup"><span><strong>@Model.Orders.ToString("N0")</strong><small>sample orders</small></span></div><div class="admin-mix-legend"><div><span class="admin-dot bg-brand"></span><span>Delivery</span><strong>64%</strong></div><div><span class="admin-dot bg-disabled"></span><span>Pickup</span><strong>36%</strong></div></div></div><p class="admin-panel-note">Illustrative split, not configured delivery zones or fees.</p></section>
+<section class="admin-panel" aria-labelledby="sellers-title"><partial name="_PanelHeading" model='@(new PanelHeading("sellers-title","Best sellers","Sample units sold","Products"))' />
+<ol class="admin-sellers">@foreach(var product in Model.Sellers){<li><img src="@Url.Content($"~/images/samples/{product.Image}-thumb.jpg")" asp-append-version="true" alt="" width="128" height="128" loading="lazy"/><div><p>@product.Name</p><span>@product.Unit</span></div><strong>@product.Units.ToString("N0")<small>units</small></strong></li>}</ol></section>
+</div>
+<section class="admin-panel admin-recent" aria-labelledby="recent-title"><partial name="_PanelHeading" model='@(new PanelHeading("recent-title","Recent orders","Demonstration records · no customer information","All orders"))' />
+<p class="admin-table-hint">Scroll horizontally to see all order details.</p>
+<div class="admin-table-scroll" role="region" aria-label="Recent sample orders" tabindex="0"><table class="admin-table"><caption class="sr-only">Five recent demonstration orders with payment and fulfilment status</caption><thead><tr><th scope="col">Order</th><th scope="col">Customer</th><th scope="col">Fulfilment</th><th scope="col">Total</th><th scope="col">Payment</th><th scope="col">Order status</th><th scope="col"><span class="sr-only">Action</span></th></tr></thead><tbody>@foreach(var order in Model.RecentOrders){<tr><th scope="row">@order.Reference</th><td>@order.Customer</td><td>@order.Method</td><td class="font-semibold tabular-nums">@order.Total</td><td>@order.Payment</td><td><partial name="_StatusBadge" model='@(new PipelineStage(order.Stage,0,order.Tone))'/></td><td><button type="button" class="admin-order-action" data-admin-preview="@order.Reference" aria-label="Preview sample order @order.Reference">↗</button></td></tr>}</tbody></table></div>
+</section>

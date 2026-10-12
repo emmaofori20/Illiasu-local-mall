@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ILLiasu_Local_Mall</RootNamespace>
+    <DefaultItemExcludes>$(DefaultItemExcludes);node_modules/**</DefaultItemExcludes>
+    <UserSecretsId>971c0add-745e-42b7-a181-d324a5db36e7</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+    <Content Remove="tests/**" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.31" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.31">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.31" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Bootstrap is unused; retain source vendor files but omit them from deployment. -->
+    <Content Remove="wwwroot/lib/bootstrap/**" />
+    <!-- These are build inputs; the compiled app.css is the public stylesheet. -->
+    <Content Remove="wwwroot/css/tokens.css" />
+  </ItemGroup>
+
+  <!-- CSS is checked in for ordinary .NET builds. Publish rebuilds it locally. -->
+  <Target Name="BuildProductionCss" BeforeTargets="ComputeFilesToPublish" Condition="'$(SkipCssBuild)' != 'true'">
+    <Exec Command="npm ci" WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <Exec Command="npm run css:prod" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+
+</Project>

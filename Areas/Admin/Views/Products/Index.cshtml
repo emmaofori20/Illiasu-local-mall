@@ -1,0 +1,34 @@
+@model ProductList
+@using ILLiasu_Local_Mall.Application.Catalog
+@{ ViewData["Title"] = "Products"; var money = CultureInfo.GetCultureInfo("en-GH"); }
+<div class="admin-page-heading"><div><p class="eyebrow">Catalogue management</p><h1>Products</h1><p>A clear view of your products, variants and catalogue visibility.</p></div><a class="button button-primary" asp-action="Create"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Add product</a></div>
+@if (TempData["CategorySuccess"] is string message) { <p role="status" tabindex="-1" data-category-success class="mb-6 rounded-xl bg-success-surface p-4 text-sm text-success">@message</p> }
+<p class="admin-notice mb-6">Live catalogue records. Add products with distinct variants and explicit unit conversions. Editing is not implemented yet. Prices cover all variants, including inactive ones; the storefront still uses demonstration data.</p>
+<section data-admin-list data-products-list class="admin-panel p-6 phone:p-4" aria-labelledby="product-list-title">
+<h2 id="product-list-title" class="mb-6 text-lg font-semibold tracking-tight">All products <span class="ml-2 text-sm font-normal text-text-muted">@Model.Total matching</span></h2>
+<div asp-validation-summary="All" class="category-errors" role="alert"></div>
+<form method="get" class="mb-6 flex flex-wrap items-end gap-3" data-submit-state>
+<input type="hidden" name="pageSize" value="@Model.PageSize" />
+<div class="min-w-0 flex-1 basis-60"><label class="category-label" for="product-search">Search products</label><input class="category-input" id="product-search" name="q" type="search" value="@Model.Search" maxlength="100" placeholder="Product name or SKU" /></div>
+<div class="w-48 phone:w-full"><label class="category-label" for="product-category">Category</label><select id="product-category" class="category-input" name="categoryId"><option value="">All categories</option>@foreach(var category in Model.Categories) { <option value="@category.Id" selected="@(category.Id == Model.CategoryId)">@category.Name@(category.IsActive ? "" : " (inactive)")</option> }</select></div>
+<div class="w-40 phone:w-full"><label class="category-label" for="product-status">Product status</label><select class="category-input" id="product-status" name="status"><option value="all" selected="@(Model.Status == "all")">All statuses</option><option value="active" selected="@(Model.Status == "active")">Active</option><option value="inactive" selected="@(Model.Status == "inactive")">Inactive</option></select></div>
+<button class="button button-secondary" type="submit" data-busy-label="Searching...">Search</button><a class="inline-flex min-h-11 items-center text-sm text-link underline" asp-action="Index">Clear</a><span class="sr-only" role="status" data-form-status></span></form>
+@if (Model.Failed) {
+<div role="alert" class="rounded-xl bg-error-surface p-6 text-error"><h3 class="font-semibold">Products could not be loaded</h3><p class="mt-2 text-sm">The database is temporarily unavailable. No changes were made. Try again shortly.</p><a class="button button-secondary mt-4" asp-action="Index" asp-route-q="@Model.Search" asp-route-categoryId="@Model.CategoryId" asp-route-status="@Model.Status" asp-route-pageSize="@Model.PageSize">Retry</a></div>
+} else if (Model.Items.Count == 0) {
+<div class="rounded-xl border border-dashed border-border px-6 py-12 text-center"><h3 class="text-lg font-semibold">@(Model.Search.Length > 0 || Model.CategoryId.HasValue || Model.Status != "all" ? "No matching products" : "Your product catalogue is ready to grow")</h3><p class="mx-auto mt-2 max-w-md text-sm text-text-muted">@(Model.Search.Length > 0 || Model.CategoryId.HasValue || Model.Status != "all" ? "Try another search or clear your filters." : "No products have been added yet. Use Add product to create your first catalogue entry.")</p></div>
+} else {
+<p id="product-scroll-hint" class="admin-table-hint">On smaller screens, scroll the table to see all details and actions.</p>
+<div class="admin-table-scroll" role="region" aria-label="Product records" aria-describedby="product-scroll-hint" tabindex="0"><table class="admin-table"><thead><tr><th scope="col">Product</th><th scope="col">Category</th><th scope="col">Variants</th><th scope="col">Price range</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody>
+@foreach(var product in Model.Items) {
+    var image = ProductManagement.SafeImagePath(product.ImagePath);
+<tr><td><div class="flex min-w-52 items-center gap-3"><div class="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-subtle">
+@if(image is not null) { <img src="@image" alt="@(string.IsNullOrWhiteSpace(product.ImageAlt) ? product.Name : product.ImageAlt)" width="48" height="48" class="h-full w-full object-contain" loading="lazy" decoding="async" data-product-image /> }
+<span hidden="@(image is not null)" data-image-fallback class="text-text-muted" role="img" aria-label="No product image"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 4h16v16H4zM4 17l5-5 4 4 3-3 4 4" /><circle cx="15" cy="8" r="1.5" /></svg></span></div><span class="max-w-60 whitespace-normal break-words font-semibold">@product.Name</span></div></td>
+<td class="max-w-44 whitespace-normal break-words">@product.Category</td><td class="tabular-nums">@product.Variants</td><td class="tabular-nums">@if(product.MinimumPrice is null) { <span class="text-text-muted">No prices yet</span> } else { <span>GH₵ @product.MinimumPrice.Value.ToString("N2", money)@if(product.MaximumPrice != product.MinimumPrice) { <span> – @product.MaximumPrice!.Value.ToString("N2", money)</span> }</span> }</td>
+<td><span class="@(product.IsActive ? "rounded-full bg-success-surface px-3 py-1 text-xs font-medium text-success" : "rounded-full bg-surface-subtle px-3 py-1 text-xs font-medium text-text-muted")">@(product.IsActive ? "Active" : "Inactive")</span>@if(!product.CategoryActive) { <span class="mt-2 block text-xs text-warning">Category inactive</span> }</td><td><partial name="_Actions" model="product" /></td></tr>
+}
+</tbody></table></div>
+}
+@if(!Model.Failed) { <partial name="_AdminPagination" model='@(new AdminPagination(Model.Page, Model.Pages, Model.Total, Model.PageSize, Model.Items.Count, "Product", "products", new() { ["q"] = Model.Search, ["status"] = Model.Status, ["categoryId"] = Model.CategoryId?.ToString() ?? "" }))' /> }
+</section><partial name="_AdminFormDialog" />

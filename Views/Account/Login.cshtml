@@ -1,0 +1,10 @@
+@model ILLiasu_Local_Mall.ViewModels.Account.LoginViewModel
+@{ ViewData["Title"] = "Welcome back"; ViewData["Description"] = "Sign in securely with your email and password."; }
+<form asp-action="Login" method="post" class="flex flex-col gap-5">
+    <input asp-for="ReturnUrl" type="hidden" />
+    <div asp-validation-summary="ModelOnly" class="text-sm text-error" role="alert"></div>
+    <div><label asp-for="Email" class="block text-sm font-medium mb-2"></label><input asp-for="Email" autocomplete="username" type="email" required class="w-full border border-control-border rounded-control px-3 py-3 text-base bg-surface" /><span asp-validation-for="Email" class="block text-sm text-error mt-1"></span></div>
+    <div><label asp-for="Password" class="block text-sm font-medium mb-2"></label><input asp-for="Password" autocomplete="current-password" required class="w-full border border-control-border rounded-control px-3 py-3 text-base bg-surface" /><span asp-validation-for="Password" class="block text-sm text-error mt-1"></span></div>
+    <button type="submit" class="button button-primary w-full">Sign in</button>
+    <p class="text-sm text-text-muted">New to ILLiasu? <a asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl" class="text-link font-medium underline underline-offset-4">Create an account</a></p>
+</form>

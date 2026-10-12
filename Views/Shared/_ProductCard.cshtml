@@ -1,0 +1,19 @@
+@model ILLiasu_Local_Mall.ViewModels.PrototypeProductViewModel
+<article class="product-card bg-surface min-w-[0] [border:1px_solid_var(--color-border)] rounded-card overflow-hidden [transition:box-shadow_var(--motion-normal)] [&:hover]:shadow-card" data-product data-name="@Model.Name" data-category="@Model.Category">
+    <div class="product-art bg-surface relative pt-5 px-6 pb-3 phone:pt-5 phone:px-2 phone:pb-2">
+        <span class="sample-tag absolute top-3 left-3 text-[10px] py-[3px] px-[7px] bg-background rounded-[4px] text-text-muted">Sample photo</span>
+        <img src="@Url.Content($"~/images/samples/{Model.Artwork}.jpg")" asp-append-version="true" alt="@Model.ImageAlt" width="600" height="450" loading="lazy" decoding="async" class="w-full aspect-[4/3] object-contain rounded-control" />
+    </div>
+    <div class="product-info p-5 [&_h3]:text-[15px] [&_h3]:leading-[1.4] [&_h3]:tracking-[-.015em] compact:p-4 compact:[&_h3]:min-h-[42px] phone:py-[14px] phone:px-3 phone:[&_h3]:text-[13px] phone:[&_h3]:min-h-[38px]">
+        <p class="product-category uppercase tracking-[.1em] text-[9px] text-text-muted mb-2 phone:text-[8px]">@Model.Category</p>
+        <h3>@Model.Name</h3>
+        <p class="product-unit text-[12px] text-text-muted mt-[6px] phone:text-[11px]">@Model.Unit</p>
+        <div class="product-bottom mt-4 phone:mt-3">
+            <p class="price text-[17px] font-[650] tabular-nums whitespace-nowrap compact:text-[15px] phone:text-[14px]">GH₵ @Model.SamplePrice.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)</p>
+            <p class="availability text-[11px] text-text-muted mt-[6px]">@(Model.SampleAvailable ? "Available · sample" : "Unavailable · sample")</p>
+            <button class="add-to-cart w-full min-h-[44px] mt-3 px-2 py-2 rounded-control bg-brand text-on-brand text-[13px] font-semibold hover:bg-brand-hover disabled:bg-disabled disabled:text-on-disabled disabled:cursor-not-allowed phone:text-[12px]" type="button" disabled="@(!Model.SampleAvailable)" data-preview="@Model.Name is a sample product. This Add to Cart action is a design preview; no item was added. Cart ordering is not implemented yet." aria-label="@(Model.SampleAvailable ? $"Add {Model.Name} to cart — design preview" : $"{Model.Name} is unavailable — sample state")">@(Model.SampleAvailable ? "Add to Cart" : "Unavailable")</button>
+            <p class="text-[10px] text-text-muted mt-[6px]">Design preview only</p>
+        </div>
+    </div>
+</article>
+

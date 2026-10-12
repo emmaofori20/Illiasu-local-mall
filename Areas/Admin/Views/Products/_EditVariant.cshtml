@@ -1,0 +1,33 @@
+@model ExistingVariantEdit
+@{
+    var display = ViewData["ExistingDisplay"] as ExistingVariantDisplay;
+    var v = display?.Variant;
+    var m = display?.Mapping;
+    var rowId = ViewData.TemplateInfo.HtmlFieldPrefix.Replace("[", "_").Replace("]", "_");
+    string ErrorId(string field) => rowId + "_" + field + "_error";
+}
+<fieldset data-existing-option class="min-w-0 rounded-xl border border-border p-5 phone:p-4">
+<legend class="max-w-full break-words px-2 text-sm font-semibold">@(v?.Name ?? "Unavailable selling option")</legend>
+<input asp-for="Id" type="hidden" /><input asp-for="Version" type="hidden" />
+<span asp-validation-for="Id" class="create-error"></span><span asp-validation-for="Version" id="@ErrorId("Version")" class="create-error"></span>
+<dl class="grid grid-cols-2 gap-4 text-sm phone:grid-cols-1"><div><dt class="text-text-muted">Product code (SKU)</dt><dd class="mt-1 break-words font-medium">@v?.Sku</dd></div><div><dt class="text-text-muted">Selling unit</dt><dd class="mt-1 font-medium">@v?.UnitOfMeasure.Name (@v?.UnitOfMeasure.Symbol)</dd></div></dl>
+<div class="mt-5 grid grid-cols-2 gap-5 phone:grid-cols-1">
+<div><label asp-for="Price" class="category-label">Selling price (GH₵ per selling unit)</label><input asp-for="Price" class="category-input" type="number" min="0" step="0.01" max="9999999999999999.99" required aria-describedby="@ErrorId("Price")" /><span asp-validation-for="Price" id="@ErrorId("Price")" class="create-error"></span></div>
+<div><label asp-for="Barcode" class="category-label">Barcode (optional)</label><input asp-for="Barcode" class="category-input" maxlength="64" autocomplete="off" aria-describedby="@ErrorId("Barcode")" /><span asp-validation-for="Barcode" id="@ErrorId("Barcode")" class="create-error"></span></div>
+</div>
+<div class="mt-5 flex flex-wrap gap-5 text-sm"><label class="flex min-h-11 items-center gap-2"><input asp-for="IsActive" class="h-5 w-5 accent-brand" />Active</label><label class="flex min-h-11 items-center gap-2"><input asp-for="IsAvailable" class="h-5 w-5 accent-brand" />Manually available</label></div>
+<div class="mt-4 rounded-xl bg-surface-subtle p-4 text-sm leading-6"><h3 class="font-semibold">Stock behaviour (read-only)</h3>
+@if(m is null) { <p class="mt-2 text-warning">Stock mapping is unavailable. Ask an administrator to review this option before saving.</p> }
+else if(m.StockVariantId == m.ProductVariantId) { <p class="mt-2">Counted separately: one sale uses one of this option's own stock units. Other balances remain unchanged.</p> }
+else { <p class="mt-2">Selling 1 @v?.UnitOfMeasure.Name removes @m.UnitsPerSale.ToString("0.######") @display?.BaseUnitName from “@display?.OwnerName” stock when inventory is enabled.</p> }
+<p class="mt-2 text-text-muted">Stock ownership and quantity per sale cannot be changed here. Deactivation does not delete this option or reassign its stock.</p></div>
+@if(v is not null && m?.StockVariantId == v.Id)
+{
+    // Read-only source metadata for the shared new-option component; never bound as editable fields.
+    <div data-existing-root hidden>
+        <input type="hidden" data-row-key value="@v.Id" /><input type="hidden" data-option-name value="@v.Name" />
+        <input type="hidden" name="SourceDisplay.Sku" value="@v.Sku" disabled />
+        <select data-sold-unit disabled aria-label="Existing source selling unit"><option value="@v.UnitOfMeasureId" data-unit-name="@v.UnitOfMeasure.Name" data-unit-symbol="@v.UnitOfMeasure.Symbol" data-unit-kind="@((int)v.UnitOfMeasure.Kind)" data-unit-decimals="@v.UnitOfMeasure.DecimalPlaces">@v.UnitOfMeasure.Name</option></select>
+    </div>
+}
+</fieldset>

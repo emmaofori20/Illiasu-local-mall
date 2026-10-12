@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>@ViewData["Title"] · ILLiasu Local Mall</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+</head>
+<body class="font-sans bg-background text-text min-h-screen">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="bg-surface border-b border-border">
+        <div class="max-w-storefront mx-auto px-8 phone:px-4 py-6 flex items-center justify-between gap-4">
+            <a class="brand" asp-controller="Home" asp-action="Index"><span class="brand-symbol" aria-hidden="true">i.</span><span>ILLiasu<span class="brand-subtitle">LOCAL MALL</span></span></a>
+            <a class="text-sm text-link font-medium min-h-[44px] inline-flex items-center" asp-controller="Home" asp-action="Index">Back to shop</a>
+        </div>
+    </header>
+    <main id="main-content" tabindex="-1" class="max-w-[480px] mx-auto px-4 py-12 phone:py-8">
+        <p class="eyebrow mb-3">Your ILLiasu account</p>
+        <h1 class="text-[32px] phone:text-[28px] font-semibold tracking-[-.025em] leading-tight mb-3">@ViewData["Title"]</h1>
+        <p class="text-sm text-text-muted leading-relaxed mb-6">@ViewData["Description"]</p>
+        <section class="bg-surface border border-border rounded-panel p-8 phone:p-6">@RenderBody()</section>
+        <p class="text-xs text-text-muted mt-6 leading-relaxed">Account access is available. Shopping and administration content still uses demonstration data.</p>
+    </main>
+</body>
+</html>

@@ -1,0 +1,41 @@
+﻿@using ILLiasu_Local_Mall.ViewModels
+@{
+    ViewData["Title"] = "Everyday essentials";
+    var samples = new[] {
+        new PrototypeProductViewModel("Long-grain rice", "Pantry", "5 kg bag", 95m, "rice", "Stock photo of uncooked white rice in a bowl; sample imagery"),
+        new PrototypeProductViewModel("Vegetable cooking oil", "Cooking", "1 litre bottle", 38m, "oil", "Stock photo of unbranded cooking oil bottles; sample imagery"),
+        new PrototypeProductViewModel("White beans", "Pantry", "1 kg pack", 32m, "beans", "Stock photo of dried white beans; sample imagery"),
+        new PrototypeProductViewModel("Fresh eggs", "Dairy & eggs", "Tray · 30 eggs", 65m, "eggs", "Stock photo of white eggs in a cardboard carton; sample imagery"),
+        new PrototypeProductViewModel("Whole milk", "Dairy & eggs", "1 litre carton", 28m, "milk", "Stock photo of milk in a glass bottle; sample imagery"),
+        new PrototypeProductViewModel("Instant noodles", "Quick meals", "Pack · 5 sachets", 25m, "noodles", "Stock photo of an uncooked instant noodle block; sample imagery"),
+        new PrototypeProductViewModel("Tomato paste", "Cooking", "400 g tin", 18m, "tomato", "Stock photo of tomato paste in a bowl beside tomatoes; sample imagery"),
+        new PrototypeProductViewModel("Sobolo drink", "Drinks", "500 ml bottle", 12m, "sobolo", "Stock photo of red hibiscus tea being poured into a glass; sample imagery", false)
+    };
+}
+<div class="mall-container max-w-storefront w-[calc(100%-64px)] mx-auto phone:w-[calc(100%-32px)] homepage">
+    <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy"><p class="eyebrow">Your neighbourhood. Your essentials.</p><h1 id="hero-title">Good things for<br />your everyday.</h1><p class="hero-description">From pantry staples to the little things on your list. Explore groceries and provisions at ILLiasu Local Mall.</p><div class="hero-actions"><a class="button button-primary" href="#featured">Explore essentials <span aria-hidden="true">↗</span></a><a class="hero-secondary" href="#categories">Browse categories <span aria-hidden="true">→</span></a></div><p class="hero-note">A first look at your local mall, online.</p></div>
+        <figure class="hero-visual"><img class="hero-photo" src="~/images/samples/hero.jpg" asp-append-version="true" alt="Stock photograph of a basket of fresh vegetables and herbs on a wooden table" width="1000" height="694" fetchpriority="high" loading="eager" /><figcaption><span>THE EVERYDAY EDIT</span><span>Temporary stock photo</span></figcaption></figure>
+    </section>
+    <section class="category-section" id="categories" aria-labelledby="categories-title">
+        <div class="section-heading"><div><p class="eyebrow">Start with your list</p><h2 id="categories-title">A little of everything.</h2></div><p>Browse the sample catalogue.</p></div>
+        <div class="category-list grid [grid-template-columns:repeat(6,1fr)] gap-3 tablet:[grid-template-columns:repeat(3,1fr)] phone:[grid-template-columns:repeat(2,minmax(0,1fr))] phone:gap-2" role="group" aria-label="Filter sample products by category">
+            <button type="button" class="category-item is-active" data-filter="all" aria-pressed="true"><img src="~/images/samples/hero-thumb.jpg" asp-append-version="true" alt="" width="128" height="128" loading="lazy" decoding="async" class="category-photo" />All essentials</button>
+            <button type="button" class="category-item" data-filter="Pantry" aria-pressed="false"><img src="~/images/samples/rice-thumb.jpg" asp-append-version="true" alt="" width="128" height="128" loading="lazy" decoding="async" class="category-photo" />Pantry staples</button>
+            <button type="button" class="category-item" data-filter="Cooking" aria-pressed="false"><img src="~/images/samples/oil-thumb.jpg" asp-append-version="true" alt="" width="128" height="128" loading="lazy" decoding="async" class="category-photo" />Cooking essentials</button>
+            <button type="button" class="category-item" data-filter="Dairy & eggs" aria-pressed="false"><img src="~/images/samples/eggs-thumb.jpg" asp-append-version="true" alt="" width="128" height="128" loading="lazy" decoding="async" class="category-photo" />Dairy &amp; eggs</button>
+            <button type="button" class="category-item" data-filter="Quick meals" aria-pressed="false"><img src="~/images/samples/noodles-thumb.jpg" asp-append-version="true" alt="" width="128" height="128" loading="lazy" decoding="async" class="category-photo" />Quick meals</button>
+            <button type="button" class="category-item" data-filter="Drinks" aria-pressed="false"><img src="~/images/samples/sobolo-thumb.jpg" asp-append-version="true" alt="" width="128" height="128" loading="lazy" decoding="async" class="category-photo" />Drinks</button>
+        </div>
+        <noscript><p class="muted">Search, category filtering and preview actions need JavaScript. All sample products are shown below; ordering is unavailable.</p></noscript>
+    </section>
+    <section id="featured" class="featured-section" aria-labelledby="featured-title">
+        <div class="section-heading"><div><p class="eyebrow">For the cupboard &amp; the kitchen</p><h2 id="featured-title">Everyday essentials.</h2></div><span class="sample-label">Sample catalogue · illustrative prices</span></div>
+        <div class="filter-status"><p id="results-count" role="status" aria-live="polite">8 sample products</p><button type="button" class="text-button" id="reset-filters">Show all essentials ↗</button></div>
+        <div class="product-grid grid [grid-template-columns:repeat(4,minmax(0,1fr))] gap-6 compact:gap-4 tablet:[grid-template-columns:repeat(3,minmax(0,1fr))] phone:[grid-template-columns:repeat(2,minmax(0,1fr))] phone:gap-3">@foreach (var product in samples) { <partial name="_ProductCard" model="product" /> }</div>
+        <div class="empty-state" id="empty-results" hidden><h3>No sample products found.</h3><p>Try “rice”, “milk” or another category. This preview contains only eight sample products.</p><button class="button button-secondary" type="button" id="clear-search">Reset search</button></div>
+        <p class="catalogue-note">Stock photos, prices and manual availability are sample data. Add to Cart opens a design preview; ordering is not available.</p>
+    </section>
+    <section class="promotion" id="offers" aria-labelledby="offers-title"><div class="promotion-art" aria-hidden="true"><img class="promotion-photo" src="~/images/samples/rice.jpg" asp-append-version="true" alt="" width="600" height="450" loading="lazy" decoding="async" /><span class="promotion-circle">The<br />pantry edit</span></div><div class="promotion-copy"><p class="eyebrow">Promotional space · design preview</p><h2 id="offers-title">Make room for<br />your kitchen favourites.</h2><p>A place for seasonal selections and shop offers.<br />Actual promotions will appear here once approved.</p><a class="button button-secondary" href="#featured">Browse sample essentials <span aria-hidden="true">→</span></a></div></section>
+    <section class="about-section" id="about" aria-labelledby="about-title"><div><p class="eyebrow">A local shop, a new way to browse</p><h2 id="about-title">From Ayigya Market<br />to your everyday list.</h2></div><div class="about-copy"><p>ILLiasu Local Mall brings groceries and provisions together in one place. This storefront is a first look at the proposed online shopping experience.</p><div class="about-details"><div><h3>Find the shop</h3><p>Ayigya Market, Ghana</p></div><div><h3>Delivery &amp; pickup</h3><p>Planned for the full release.<br />Zones, fees and details await approval.</p></div></div></div></section>
+</div>

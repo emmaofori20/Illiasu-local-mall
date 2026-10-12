@@ -1,0 +1,6 @@
+@model ProductRow
+@{ var menuId = "product-actions-" + Model.Id.ToString("N"); }
+<button type="button" id="@menuId-trigger" class="admin-icon-button hover:bg-surface-subtle" popovertarget="@menuId" aria-haspopup="menu" aria-expanded="false" aria-controls="@menuId" aria-label="Actions for @Model.Name" data-category-menu-trigger><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg></button>
+<div id="@menuId" popover="auto" role="menu" aria-label="Actions for @Model.Name" class="category-action-menu" data-category-menu>
+<a role="menuitem" class="category-menu-item" asp-action="Edit" asp-route-id="@Model.Id">Edit<span class="sr-only"> @Model.Name</span></a>
+<a role="menuitem" class="category-menu-item" asp-action="Status" asp-route-id="@Model.Id" data-category-dialog>@(Model.IsActive ? "Deactivate" : "Activate")<span class="sr-only"> @Model.Name</span></a></div>

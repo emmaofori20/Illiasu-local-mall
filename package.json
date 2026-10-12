@@ -1,0 +1,14 @@
+{
+  "name": "illiasu-local-mall",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "css:dev": "tailwindcss -i ./Styles/app.css -o ./wwwroot/css/app.css --watch",
+    "css:build": "tailwindcss -i ./Styles/app.css -o ./wwwroot/css/app.css",
+    "css:prod": "tailwindcss -i ./Styles/app.css -o ./wwwroot/css/app.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.0",
+    "tailwindcss": "4.3.0"
+  }
+}

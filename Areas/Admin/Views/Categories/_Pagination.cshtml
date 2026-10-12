@@ -1,0 +1,2 @@
+@model CategoryList
+<partial name="_AdminPagination" model='@(new AdminPagination(Model.Page, Model.Pages, Model.Total, Model.PageSize, Model.Items.Count, "Category", "categories", new() { ["q"] = Model.Search, ["status"] = Model.Status }))' />

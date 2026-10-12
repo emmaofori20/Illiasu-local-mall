@@ -1,0 +1,28 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ILLiasu Local Mall storefront design prototype. Explore sample groceries and provisions." />
+    <title>@ViewData["Title"] · ILLiasu Local Mall</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+</head>
+<body class="font-sans">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="prototype-bar"><div class="mall-container max-w-storefront w-[calc(100%-64px)] mx-auto phone:w-[calc(100%-32px)]"><span><span class="prototype-dot" aria-hidden="true"></span> Prototype — sample data</span><span class="prototype-detail">Products, prices &amp; stock photos are for design review.</span></div></div>
+    <partial name="_StorefrontHeader" />
+    <main id="main-content" tabindex="-1">@RenderBody()</main>
+    <partial name="_StorefrontFooter" />
+    <dialog id="prototype-dialog" aria-labelledby="dialog-title">
+        <div class="dialog-heading"><span class="eyebrow">Design preview</span><button type="button" class="icon-button" data-close-dialog aria-label="Close preview">×</button></div>
+        <h2 id="dialog-title">A preview of what’s ahead.</h2>
+        <p id="dialog-message"></p>
+        <button type="button" class="button button-primary" data-close-dialog>Continue browsing</button>
+    </dialog>
+    <script src="~/js/site.js" asp-append-version="true" defer></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
