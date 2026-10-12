@@ -1,5 +1,9 @@
 # Selling unit reference data
 
+For explicit production provisioning or SQL fallback, see
+[database-provisioning.md](database-provisioning.md). The legacy local command below
+retains its original guard. Both workflows use the same add-only unit definitions.
+
 The Add Product query loads active `UnitsOfMeasure` rows from SQL Server on GET and after unsuccessful POSTs. The empty dropdown was caused by an empty table, not a binding failure.
 
 Run the add-only local development setup command from the project directory:

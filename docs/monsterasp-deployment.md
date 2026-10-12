@@ -30,7 +30,9 @@ modify a production database or enable gated admin functionality.
    role. Existing role/admin and unit setup commands and the EF design-time factory
    explicitly reject non-local or non-Development targets. Do not bypass these
    guards, run production as Development, or point local commands at production.
-   Agree an authorized production provisioning procedure before launching accounts.
+   Use the explicit guarded workflow in [database-provisioning.md](../docs/database-provisioning.md)
+   or its reviewed SQL fallback before launching accounts. The hosted TLS trust
+   prerequisite remains unresolved; no production migration is automatic.
    First-admin access is not enabled by deploying the development admin prototype.
 3. **Precompiled CSS:** compile production CSS locally and commit it with its hash
    manifest and source inputs using the workflow below. The host no longer needs
