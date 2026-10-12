@@ -6,7 +6,7 @@ Primary styling framework: Tailwind CSS v4 using local `tailwindcss` and `@tailw
 
 Preserve existing visuals during migrations. Exact `compact`, `tablet` and `phone` variants retain max-width 1100px, 900px and 767px boundaries. Keep JavaScript hooks/ARIA intact; validate before/after screenshots and interactions when preview tooling is available.
 
-Run `npm ci` initially, `npm run css:dev` alongside the MVC dev server, and `npm run css:prod` for production. Run the CSS build and `dotnet build` after styling changes. The layout serves generated `wwwroot/css/app.css` with cache busting; do not edit generated CSS. Publish runs the production CSS build; CI may use `-p:SkipCssBuild=true` only after separately building CSS. Keep Inter and configurable colours pending client approval.
+Run `npm ci` initially, `npm run css:dev` alongside the MVC dev server, and `npm run css:prod` before production publishing. Run the CSS build and `dotnet build` after styling changes. The layout serves generated `wwwroot/css/app.css` with cache busting; do not edit generated CSS. Commit production CSS and `build/production-css.sha256` with the inputs. Publish validates their content hashes using .NET only and never invokes npm; `-p:SkipCssBuild=true` does not bypass validation. This supersedes the design skill's older publish-time npm convention. Keep Inter and configurable colours pending client approval.
 
 Site-wide visual rule: follow Wharf-inspired typography and layout discipline in **every** customer and admin page. Use Inter; never copy Wharf colours. Brand colours remain subject to client approval. Reference details in `.agents/skills/illiasu-design/SKILL.md`.
 

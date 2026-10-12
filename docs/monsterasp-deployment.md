@@ -32,12 +32,9 @@ modify a production database or enable gated admin functionality.
    guards, run production as Development, or point local commands at production.
    Agree an authorized production provisioning procedure before launching accounts.
    First-admin access is not enabled by deploying the development admin prototype.
-3. **CSS build worker:** `dotnet publish` runs `npm ci` and `npm run css:prod`.
-   Confirm Node/npm, dev dependency installation and npm registry access on the
-   MonsterASP.NET .NET build worker. Its documented .NET deploy flow does not
-   explicitly guarantee these capabilities. If unavailable, resolve the build
-   workflow before deploying. `SkipCssBuild=true` is only valid after separately
-   building production CSS; do not silently skip compilation on the host.
+3. **Precompiled CSS:** compile production CSS locally and commit it with its hash
+   manifest and source inputs using the workflow below. The host no longer needs
+   Node/npm. Missing or stale assets block publishing, even with `SkipCssBuild=true`.
 4. **Data Protection:** confirm the IIS application pool persists keys, protects
    them at rest, and retains them across recycling/deployment. No custom key store
    is configured. Do not store keys in the public static folder or Git. Verify a
@@ -76,7 +73,8 @@ payments or commercially gated inventory/purchasing features.
    the host's private field. Choose **Build .NET app** and explicitly select
    `ILLiasu Local Mall.csproj`, since the repository also contains test projects.
 5. Enable Git deploy, then Pull latest and Build & publish. Review build logs for
-   both the Tailwind compilation and .NET publish. Enabling alone does not publish.
+   `Validated precompiled production CSS; no npm step required.` and .NET publish.
+   Enabling alone does not publish. No custom `SkipCssBuild` argument is needed.
    Manual deployment works on Free; deploy-on-push requires Premium.
 6. Confirm the site root contains publish output and generated `web.config`, with
    static assets in its `wwwroot` child directory. Do not deploy source as Static.
@@ -88,19 +86,73 @@ payments or commercially gated inventory/purchasing features.
 
 ```powershell
 npm.cmd ci
+npm.cmd run css:prod
+dotnet clean "ILLiasu Local Mall.csproj" -c Release
 dotnet build "ILLiasu Local Mall.csproj" -c Release
 dotnet publish "ILLiasu Local Mall.csproj" -c Release -o obj/deployment-check/publish-final
 ```
 
-Publish itself restores npm dependencies and runs the minified production CSS build.
-Node is a build dependency, not an application runtime requirement. Generated CSS
-must not be edited by hand. Use a fresh output directory for packaging inspection;
-publishing over old output may leave obsolete files.
+CSS compilation is a separate local/CI step. `scripts/build-production-css.mjs`
+invokes the pinned Tailwind CLI with `--minify` and records SHA-256 hashes of all
+Styles CSS, Views/Areas Razor, public JavaScript, tokens, npm manifests, CSS build
+tooling and generated CSS. It removes the previous stamp before compiling so a
+failed build cannot retain a valid stamp. `build/ProductionCss.targets` validates
+the exact file list and hashes through a .NET MSBuild task, before collecting
+publish files. Additions/deletions and changed inputs/output are rejected.
+Line endings are normalized so Git CRLF/LF conversions do not produce false failures;
+timestamps are not used. If Tailwind source locations change, update both input
+lists and rebuild. The manifest is build provenance, not a security signature.
+
+Commit `wwwroot/css/app.css`, `build/production-css.sha256`, build scripts/targets,
+package/project changes and current inputs together. Do not manually generate the
+stamp or edit CSS. Development/watch builds do not stamp production output; rerun
+`css:prod` before deployment. Node is needed only for this frontend preparation.
+Publish always validates precompiled CSS, including when `SkipCssBuild=true` is
+supplied for compatibility. No npm commands remain in .NET publish.
+
+MonsterASP.NET documents that **Build .NET app** runs `dotnet publish`. Therefore
+precompiled tracked CSS is compatible with that documented flow without a custom
+host flag; validation needs only its .NET SDK. This conclusion is based on the
+documented flow and local tests, not a successful remote redeployment yet. Choose
+the MVC project explicitly; do not switch the source repository to Static deployment.
+Use a fresh output directory for packaging inspection; publishing over old output
+may leave obsolete files.
+
+### Failed deployment diagnosis
+
+The former `BuildProductionCss` target had `BeforeTargets="ComputeFilesToPublish"`
+and executed `npm ci` and `npm run css:prod` unless `SkipCssBuild=true`. This explains
+why C# Release compilation passed but publishing failed at npm. MSB3073 exit code 1
+does not establish npm's underlying cause (cache permissions, registry access,
+dependency resolution, or another npm error); the host's full npm log is needed for
+that diagnosis. No specific npm infrastructure defect has been assumed. The new
+workflow removes that host dependency while retaining asset freshness checks.
+
+### Redeploy
+
+1. Run the local commands above after every relevant source change.
+2. Commit and push the source, production CSS and manifest together to the selected
+   deployment branch. Do not commit node_modules or local publish output.
+3. In MonsterASP.NET Git Deploy, keep **Build .NET app** and select
+   `ILLiasu Local Mall.csproj`; Pull latest, confirm the intended commit, then
+   Build & publish. No npm install should appear in the publish log.
+4. Confirm the validation message, successful publish and HTTPS CSS/JS/image
+   delivery. Do not protect `wwwroot/css/app.css` against deployment updates.
+   If a hash check fails, rebuild and push both artifacts with the current inputs.
+5. Keep existing Production environment/database settings. The separate database,
+   role provisioning, HTTPS and key persistence prerequisites above still apply.
 
 Verified locally:
 
-- Release build and final full publish succeeded with zero .NET warnings/errors.
-  npm installed 27 packages and reported no vulnerabilities.
+- Clean Release build and publish succeeded with zero .NET warnings/errors after
+  separately compiling production CSS. npm installed 27 packages and reported no
+  vulnerabilities during local frontend preparation, not during publish.
+- Publish also passed with Node/npm removed from PATH and `SkipCssBuild=true`.
+  Negative tests rejected an invalid manifest (including with that flag), a missing
+  manifest and a newly added scanned JavaScript file. Temporary probes were restored.
+- All 37 deployable public CSS/JS/image/vendor assets matched source byte-for-byte
+  in the final publish. Generated IIS config uses `dotnet` and in-process hosting.
+  Build scripts, manifests and source/build directories were absent from publish.
 - Final output contains application assemblies, net8 runtime configuration, generated
   IIS config, public CSS/JS/images. Development appsettings, npm manifests, the .NET
   tool manifest, Bootstrap and Tailwind tokens are excluded. Tests, docs, Styles

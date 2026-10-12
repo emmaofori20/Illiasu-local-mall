@@ -88,7 +88,7 @@ dotnet build "ILLiasu Local Mall.sln"
 dotnet publish "ILLiasu Local Mall.csproj" -c Release
 ```
 
-Output is `wwwroot/css/app.css`, served through existing `UseStaticFiles()` and linked with `asp-append-version="true"`. It is retained in source control so ordinary .NET builds do not require Node. Do not edit output manually. Publish invokes `npm ci` and the minified build before collecting publish files; Node/npm is required on the build host, not IIS. CI can opt out with `-p:SkipCssBuild=true` only after explicitly compiling current production CSS. Rebuild generated output whenever tokens, source CSS or utility usage changes.
+Output is `wwwroot/css/app.css`, served through existing `UseStaticFiles()` and linked with `asp-append-version="true"`. Do not edit output manually. Run `npm ci` and `npm run css:prod` before publishing; the production script compiles minified CSS and records input/output hashes in `build/production-css.sha256`. Commit both generated files alongside source changes. Publish validates the hashes with .NET only and never invokes npm. `SkipCssBuild=true` does not bypass this validation. Rebuild whenever tokens, source CSS, Razor, scanned JavaScript, package files or build tooling changes. Development/watch output cannot replace stamped production output. See [deployment workflow](monsterasp-deployment.md).
 
 Use complete literal utilities in Razor/JS. A conditional may select complete strings, e.g. `@(active ? "bg-brand text-on-brand" : "bg-surface text-text")`; never construct fragments like `bg-@Model.Colour` or `"grid-cols-" + count`. Finite class maps must live in scanned Razor/JS sources. Avoid broad safelists.
 

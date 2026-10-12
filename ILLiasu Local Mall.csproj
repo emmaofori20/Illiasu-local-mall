@@ -29,10 +29,7 @@
     <Content Remove="wwwroot/css/tokens.css" />
   </ItemGroup>
 
-  <!-- CSS is checked in for ordinary .NET builds. Publish rebuilds it locally. -->
-  <Target Name="BuildProductionCss" BeforeTargets="ComputeFilesToPublish" Condition="'$(SkipCssBuild)' != 'true'">
-    <Exec Command="npm ci" WorkingDirectory="$(MSBuildProjectDirectory)" />
-    <Exec Command="npm run css:prod" WorkingDirectory="$(MSBuildProjectDirectory)" />
-  </Target>
+  <!-- Publish validates committed production assets without requiring Node/npm. -->
+  <Import Project="build/ProductionCss.targets" />
 
 </Project>

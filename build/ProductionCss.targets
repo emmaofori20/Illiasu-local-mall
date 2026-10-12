@@ -1,0 +1,49 @@
+<Project>
+  <UsingTask TaskName="ValidateProductionCssHashes" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Root ParameterType="System.String" Required="true" />
+      <Inputs ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Linq" />
+      <Using Namespace="System.Text" />
+      <Using Namespace="System.Security.Cryptography" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        try
+        {
+            var manifest = Path.Combine(Root, "build", "production-css.sha256");
+            var css = Path.Combine(Root, "wwwroot", "css", "app.css");
+            if (!File.Exists(manifest) || !File.Exists(css) || string.IsNullOrWhiteSpace(File.ReadAllText(css)))
+                throw new InvalidOperationException("Production CSS or its build manifest is missing/empty.");
+            var paths = Inputs.Select(item => item.ItemSpec.Replace('\\', '/'))
+                .Distinct().OrderBy(path => path, StringComparer.Ordinal);
+            using (var sha = SHA256.Create())
+            {
+                var actual = string.Join("\n", paths.Select(path => {
+                    var content = File.ReadAllText(Path.Combine(Root, path)).Replace("\r\n", "\n");
+                    var hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(content)))
+                        .Replace("-", "").ToLowerInvariant();
+                    return path + "|" + hash;
+                })) + "\n";
+                if (File.ReadAllText(manifest).Replace("\r\n", "\n") != actual)
+                    throw new InvalidOperationException("Production CSS is stale or modified: inputs/output do not match the build manifest.");
+            }
+            Log.LogMessage(Microsoft.Build.Framework.MessageImportance.High, "Validated precompiled production CSS; no npm step required.");
+        }
+        catch (Exception error)
+        {
+            Log.LogError("{0} Run npm ci and npm run css:prod locally, then commit app.css and build/production-css.sha256 with the inputs. SkipCssBuild does not bypass validation.", error.Message);
+            return false;
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
+  <Target Name="ValidateProductionCss" BeforeTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ProductionCssInput Include="Styles/**/*.css;Views/**/*.cshtml;Areas/**/*.cshtml;wwwroot/js/**/*.js;wwwroot/css/tokens.css;package.json;package-lock.json;scripts/build-production-css.mjs;build/ProductionCss.targets;wwwroot/css/app.css" />
+    </ItemGroup>
+    <ValidateProductionCssHashes Root="$(MSBuildProjectDirectory)" Inputs="@(ProductionCssInput)" />
+  </Target>
+</Project>
