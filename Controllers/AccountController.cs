@@ -62,7 +62,12 @@ public sealed class AccountController(UserManager<ApplicationUser> users,
             : await signIn.PasswordSignInAsync(user, model.Password, isPersistent: false, lockoutOnFailure: true);
         LogOutcome("Login", result.Succeeded ? "Succeeded" : result.IsLockedOut ? "LockedOut"
             : result.IsNotAllowed ? "NotAllowed" : result.RequiresTwoFactor ? "RequiresTwoFactor" : "Rejected");
-        if (result.Succeeded) return SafeRedirect(model.ReturnUrl);
+        if (result.Succeeded)
+        {
+            if (await users.IsInRoleAsync(user!, AppRoles.Admin))
+                return RedirectToAction("Index", "Overview", new { area = "Admin" });
+            return SafeRedirect(model.ReturnUrl);
+        }
         ModelState.AddModelError("", "Unable to sign in. Check your details or try again later.");
         return View(model);
     }

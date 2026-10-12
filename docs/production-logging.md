@@ -1,7 +1,8 @@
 # Production diagnostics on MonsterASP.NET
 
 Normal web startup never provisions a database. This change does not alter users,
-roles, connection settings, authentication rules or the development admin guard.
+roles, connection settings or authentication rules. The Admin-only Overview preview
+is now explicitly available in Production; other admin features remain Development-only.
 
 ## Findings
 

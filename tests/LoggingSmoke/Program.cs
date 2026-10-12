@@ -1,4 +1,7 @@
 using System.Net;
+using System.Security.Claims;
+using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Authentication;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using ILLiasu_Local_Mall.Controllers;
@@ -138,7 +141,12 @@ try
     {
         builder.UseContentRoot(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../")));
         builder.UseEnvironment("Production");
-        builder.ConfigureServices(services => services.AddDataProtection().UseEphemeralDataProtectionProvider());
+        builder.ConfigureServices(services =>
+        {
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
+            services.AddAuthentication(options => options.DefaultAuthenticateScheme = "TestRole")
+                .AddScheme<AuthenticationSchemeOptions, TestRoleHandler>("TestRole", _ => { });
+        });
     });
     using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
     mvcRoot = factory.Services.GetRequiredService<IHostEnvironment>().ContentRootPath;
@@ -154,7 +162,16 @@ try
     Check(post.StatusCode == HttpStatusCode.InternalServerError, "Real MVC SQL failure uses production exception handler");
     Check(!((await post.Content.ReadAsStringAsync()).Contains("SqlException")), "Production error page does not expose exception details");
     Check((await client.GetAsync("/App_Data/logs/app-20261012.jsonl")).StatusCode == HttpStatusCode.NotFound, "Actual MVC app cannot serve private log path");
-    Check((await client.GetAsync("/Admin/Overview")).StatusCode == HttpStatusCode.NotFound, "Production admin restriction retained");
+    var dashboard = await client.GetAsync("/Admin/Overview");
+    Check(dashboard.StatusCode == HttpStatusCode.Redirect && dashboard.Headers.Location!.OriginalString.Contains("/Account/Login"), "Production dashboard challenges anonymous visitors");
+    client.DefaultRequestHeaders.Add("Test-Role", AppRoles.Customer);
+    var denied = await client.GetAsync("/Admin/Overview");
+    Check(denied.StatusCode == HttpStatusCode.Redirect && denied.Headers.Location!.OriginalString.Contains("AccessDenied"), "Customer cannot access Production dashboard");
+    client.DefaultRequestHeaders.Remove("Test-Role");
+    client.DefaultRequestHeaders.Add("Test-Role", AppRoles.Admin);
+    var adminPage = await client.GetAsync("/Admin/Overview");
+    Check(adminPage.StatusCode == HttpStatusCode.OK && (await adminPage.Content.ReadAsStringAsync()).Contains("sample data"), "Admin can view clearly labelled Production dashboard preview");
+    Check((await client.GetAsync("/Admin/Products")).StatusCode == HttpStatusCode.NotFound, "Other admin features remain Development-only");
 }
 finally
 {
@@ -167,7 +184,49 @@ var mvcText = string.Join('\n', Directory.GetFiles(Path.Combine(mvcRoot!, appRun
 Check(!mvcText.Contains("canary", StringComparison.Ordinal), "Actual MVC logs omit credentials/query/form canaries");
 Check(mvcText.Contains("ApplicationStarted") && mvcText.Contains("ApplicationStopping") && mvcText.Contains("ApplicationStopped"), "Actual startup and graceful shutdown lifecycle events persisted");
 Check(mvcText.Contains("SqlErrors") && mvcText.Contains("Account.Login"), "Actual login SQL failure retains safe endpoint and SQL diagnostics");
-Console.WriteLine($"{checks} logging checks passed. Test artifacts: {root}");
+foreach (var role in new[] { AppRoles.Admin, AppRoles.Customer })
+{
+    using var roleUsers = new RoleUserManager(role);
+    var controller = new AccountController(roleUsers, new SuccessfulSignInManager(roleUsers), null!, Microsoft.Extensions.Logging.Abstractions.NullLogger<AccountController>.Instance);
+    controller.ControllerContext = new ControllerContext
+    {
+        HttpContext = new DefaultHttpContext(), RouteData = new Microsoft.AspNetCore.Routing.RouteData(),
+        ActionDescriptor = new Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor()
+    };
+    controller.Url = new Microsoft.AspNetCore.Mvc.Routing.UrlHelper(controller.ControllerContext);
+    var result = await controller.Login(new LoginViewModel { Email = "test@example.invalid", Password = "test-only", ReturnUrl = "/Account" });
+    Check(role == AppRoles.Admin
+        ? result is RedirectToActionResult redirect && redirect.ControllerName == "Overview" && redirect.ActionName == "Index" && Equals(redirect.RouteValues!["area"], "Admin")
+        : result is LocalRedirectResult local && local.Url == "/Account", "Successful " + role + " login uses intended destination");
+}
+Console.WriteLine($"{checks} logging and access checks passed. Test artifacts: {root}");
+
+sealed class RoleUserManager(string role) : UserManager<ApplicationUser>(new EmptyStore(), Microsoft.Extensions.Options.Options.Create(new IdentityOptions()),
+    new PasswordHasher<ApplicationUser>(), [], [], new UpperInvariantLookupNormalizer(), new IdentityErrorDescriber(),
+    new ServiceCollection().BuildServiceProvider(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UserManager<ApplicationUser>>.Instance)
+{
+    public override Task<ApplicationUser?> FindByEmailAsync(string email) => Task.FromResult<ApplicationUser?>(new ApplicationUser());
+    public override Task<bool> IsInRoleAsync(ApplicationUser user, string requested) => Task.FromResult(role == requested);
+}
+sealed class SuccessfulSignInManager(UserManager<ApplicationUser> users) : SignInManager<ApplicationUser>(users,
+    new HttpContextAccessor { HttpContext = new DefaultHttpContext() }, new UserClaimsPrincipalFactory<ApplicationUser>(users, Microsoft.Extensions.Options.Options.Create(new IdentityOptions())),
+    Microsoft.Extensions.Options.Options.Create(new IdentityOptions()), Microsoft.Extensions.Logging.Abstractions.NullLogger<SignInManager<ApplicationUser>>.Instance,
+    new AuthenticationSchemeProvider(Microsoft.Extensions.Options.Options.Create(new AuthenticationOptions())), new DefaultUserConfirmation<ApplicationUser>())
+{
+    public override Task<Microsoft.AspNetCore.Identity.SignInResult> PasswordSignInAsync(ApplicationUser user, string password, bool isPersistent, bool lockoutOnFailure)
+        => Task.FromResult(Microsoft.AspNetCore.Identity.SignInResult.Success);
+}
+sealed class TestRoleHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
+    : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+{
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        var role = Request.Headers["Test-Role"].ToString();
+        if (role is not (AppRoles.Admin or AppRoles.Customer)) return Task.FromResult(AuthenticateResult.NoResult());
+        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "test-only"), new Claim(ClaimTypes.Role, role)], Scheme.Name);
+        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name)));
+    }
+}
 
 sealed class EmptyUserManager() : UserManager<ApplicationUser>(new EmptyStore(), Microsoft.Extensions.Options.Options.Create(new IdentityOptions()),
     new PasswordHasher<ApplicationUser>(), [], [], new UpperInvariantLookupNormalizer(), new IdentityErrorDescriber(),

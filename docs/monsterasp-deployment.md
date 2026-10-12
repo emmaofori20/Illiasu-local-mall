@@ -16,7 +16,8 @@ Production diagnostics and WebFTP verification are documented in
 - Configuration contains no committed database connection in either appsettings
   file. Development user secrets are not production configuration.
 - No migrations or database creation run at application startup. Admin controllers
-  remain Development-only and return 404 in Production.
+  remain Development-only, except the Admin-role-protected Overview preview.
+  Successful Admin logins go to `/Admin/Overview`; its sample-data notice remains.
 - Static files use `UseStaticFiles`; the layout serves generated `app.css` and
   `site.js` with cache busting. Inter is loaded from Google Fonts.
 - Publish generates an IIS `web.config` using AspNetCoreModuleV2, `dotnet`,
