@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+// CLI output is deliberately sanitized; avoid provider logs dumping SQL diagnostics.
+if (args.Contains("--database-provision")) builder.Logging.ClearProviders();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews(options =>
@@ -25,6 +27,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }
 
     options.UseSqlServer(connectionString);
+    if (args.Contains("--database-provision"))
+        options.AddInterceptors(new RejectImplicitDatabaseCreation());
 });
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -85,6 +89,16 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+if (args.Contains("--database-provision"))
+{
+    using var cancellation = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, e) => { e.Cancel = true; cancellation.Cancel(); };
+    Environment.ExitCode = await DatabaseProvisioning.RunAsync(app.Services, app.Environment,
+        app.Configuration, args, Console.Out, cancellation.Token);
+    await app.DisposeAsync();
+    return;
+}
 
 if (args.Contains("--seed-catalogue-units"))
 {
