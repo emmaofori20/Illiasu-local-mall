@@ -21,6 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Keep build tooling and local configuration out of the hosted application. -->
+    <Content Update="appsettings.Development.json;package.json;package-lock.json;dotnet-tools.json" CopyToPublishDirectory="Never" />
     <!-- Bootstrap is unused; retain source vendor files but omit them from deployment. -->
     <Content Remove="wwwroot/lib/bootstrap/**" />
     <!-- These are build inputs; the compiled app.css is the public stylesheet. -->
